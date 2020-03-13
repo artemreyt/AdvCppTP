@@ -1,0 +1,5 @@
+add_executable(parent.out parent.cpp)
+add_executable(child.out child.cpp)
+
+target_link_libraries(parent.out proc)
+target_link_libraries(child.out proc)

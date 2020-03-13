@@ -1,0 +1,19 @@
+1. execl(), execlp()...
+2. зомби-процессы
+3. fork()
+4. raise() (kill()); signal()
+5. Сигналы
+6. pipe, pipe()
+7. shared libraries, (gcc -fPIC)
+8. make (VAR1=1 VAR2=2; -n, -B, -d)
+9. Cmake:
+	- include(), CMAKE_MODULE_PATH
+	- find_package()
+	- add_subdirectory(), add_executuble(), add_library()
+	- include_directories(), add_compile_options(), add_definitions()
+	- target_(include_directories()|)
+	- target_link_libraries()
+	- if/else
+	- message(), set()
+
+
