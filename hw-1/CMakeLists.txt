@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(proc)
 
-set(SOURCE_LIB src/process.cpp)
+set(SOURCE_LIB src/Process.cpp)
 
 add_library(proc STATIC ${SOURCE_LIB})
 target_include_directories(proc PUBLIC include)

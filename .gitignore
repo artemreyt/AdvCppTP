@@ -1,4 +1,7 @@
 build
 *.out
 *.a
-.vscode/
+.vscode
+.idea
+cmake-build-debug
+build-debug
