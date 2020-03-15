@@ -4,6 +4,7 @@
 #include <string.h>
 #include "Protocol.hpp"
 #include <sys/wait.h>
+#include <unistd.h>
 
 
 /*
@@ -19,8 +20,7 @@ int main()
     Process proc("./child.out");
     std::string buffer;
 
-    while (true)
-    {
+    while (true) {
         std::getline(std::cin, buffer);
         if (std::cin.eof())
             break;
@@ -28,15 +28,6 @@ int main()
         protocolWrite(proc, buffer);
         protocolRead(proc, buffer);
         std::cout << "Got from child: " << buffer << std::endl;
-    }
-
     proc.close();
-    int status;
-    pid_t child_pid = wait(&status);
-    if (WIFEXITED(status))
-        std::cout << "Child process " << child_pid << " exited with code "
-                  << WEXITSTATUS(status) << std::endl;
-    else
-        std::cout << "Process " << child_pid << "did't exit after wait()" << std::endl;
     return 0;
 }

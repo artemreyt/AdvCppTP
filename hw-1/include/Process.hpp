@@ -22,6 +22,7 @@ public:
     void close();
 
 private:
+
     pid_t	cpid;
     int		child_stdin;
     int		child_stdout;
