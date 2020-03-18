@@ -4,10 +4,9 @@
 #include <csignal>
 #include <unistd.h>
 
-static const auto npos = std::string::npos;
-
 std::vector<char *> parse_params(const std::string& path)
 {
+    const size_t npos = std::string::npos;
     std::vector<char *> params;
 
     size_t start = 0;

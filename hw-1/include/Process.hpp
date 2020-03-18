@@ -5,28 +5,30 @@
 #include <cstddef>
 #include <vector>
 
-class Process
+namespace artemreyt
 {
-public:
-    explicit Process(const std::string& path);
-    ~Process();
+    class Process
+    {
+    public:
+        explicit Process(const std::string &path);
+        ~Process();
+        size_t write(const void *data, size_t len);
+        void writeExact(const void *data, size_t len);
+        size_t read(void *data, size_t len);
+        void readExact(void *data, size_t len);
 
-    size_t write(const void* data, size_t len);
-    void writeExact(const void* data, size_t len);
-    size_t read(void* data, size_t len);
-    void readExact(void* data, size_t len);
+        bool isReadable() const;
+        void closeStdin();
+        void close();
 
-    bool isReadable() const;
-    void closeStdin();
+        int getStdin() const;
+        int getStdout() const;
 
-    void close();
-
-private:
-
-    pid_t	cpid;
-    int		child_stdin;
-    int		child_stdout;
-    const std::vector<char *> params;
-};
+    private:
+        pid_t child_pid_;
+        int child_stdin_;
+        int child_stdout_;
+    };
+}
 
 #endif //PROCESS_H

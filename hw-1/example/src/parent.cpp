@@ -17,17 +17,30 @@
 
 int main()
 {
-    Process proc("./child.out");
+    artemreyt::Process proc("./child.out");
     std::string buffer;
 
-    while (true) {
+    while (true)
+    {
         std::getline(std::cin, buffer);
         if (std::cin.eof())
             break;
         std::cout << "Send \'" << buffer << "\' to child." << std::endl;
-        protocolWrite(proc, buffer);
-        protocolRead(proc, buffer);
+
+        if (Protocol::write(proc.getStdin(), buffer) == -1)
+        {
+            std::cout << "Error while writing to child" << std::endl;
+            break;
+        }
+
+        if (Protocol::read(proc.getStdout(), buffer) == -1)
+        {
+            std::cout << "Error while reading from child" << std::endl;
+            break;
+        }
+
         std::cout << "Got from child: " << buffer << std::endl;
+    }
     proc.close();
     return 0;
 }

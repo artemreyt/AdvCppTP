@@ -10,3 +10,4 @@ target_compile_options(proc PRIVATE -Wall -Wextra -Werror)
 target_compile_features(proc PUBLIC cxx_std_17)
 
 add_subdirectory(example)
+add_subdirectory(lib)
