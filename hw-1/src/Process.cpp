@@ -15,7 +15,12 @@ namespace artemreyt
 {
     Process::Process(const std::string &path)
     {
-        std::vector<char *> params = parse_params(path);
+        std::vector<std::string> params_cxx = parse_params(path);
+        std::vector<char *> params_c;
+        for (std::string& str: params_cxx)
+            params_c.push_back(str.data());
+        params_c.push_back(nullptr);
+
         int pipefd_in[2], pipefd_out[2];
         get_pipe(pipefd_in);
         get_pipe(pipefd_out);
@@ -32,16 +37,13 @@ namespace artemreyt
                 dup2(pipefd_in[0], STDIN_FILENO);
                 dup2(pipefd_out[1], STDOUT_FILENO);
 
-                if (execvp(params[0], params.data()))
+                if (execvp(params_c[0], params_c.data()))
                 {
                     std::string msg = "Isn't able to execute " + path;
                     throw std::runtime_error(msg.c_str());
                 }
             }
             default:
-                for (auto &par: params)
-                    ::free(par);
-                params.clear();
 
                 child_stdin_ = pipefd_in[1];
                 child_stdout_ = pipefd_out[0];
@@ -83,7 +85,7 @@ namespace artemreyt
         size_t written = 0;
         while (written < len)
         {
-            ssize_t bytes = write((char *)data + written, len - written);
+            ssize_t bytes = write(static_cast<const char *>(data) + written, len - written);
             if (bytes == -1)
             {
                 if (errno == EACCES)
@@ -102,7 +104,7 @@ namespace artemreyt
         size_t was_read = 0;
         while (was_read < len)
         {
-            ssize_t bytes = read((char *) data + was_read, len - was_read);
+            ssize_t bytes = read(static_cast<char *>(data) + was_read, len - was_read);
             if (bytes == -1)
             {
                 if (errno == EACCES)

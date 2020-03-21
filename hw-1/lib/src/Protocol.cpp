@@ -1,6 +1,5 @@
 #include <string>
 #include <cstdio>
-#include <exception>
 #include <unistd.h>
 #include "Protocol.hpp"
 #include <iostream>
@@ -35,7 +34,7 @@ int Protocol::write(int fd, const std::string &data)
 {
     size_t size = data.size();
 
-    std::string buffer((char *)&size, (char *)&size + sizeof(size));
+    std::string buffer(reinterpret_cast<char *>(&size), sizeof(size));
     buffer += data;
     size_t was_written = 0;
     while (was_written < buffer.size())
