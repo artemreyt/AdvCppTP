@@ -1,6 +1,4 @@
 #include <unistd.h>
-#include <cstdio>
-#include <string.h>
 #include <cctype>
 #include <string>
 #include "Protocol.hpp"

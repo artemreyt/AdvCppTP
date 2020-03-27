@@ -17,7 +17,7 @@
 
 int main()
 {
-    artemreyt::Process proc("./child.out");
+    Process::Process proc("./child.out");
     std::string buffer;
 
     while (true)

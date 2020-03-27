@@ -1,4 +1,5 @@
 #include "Process.hpp"
+#include "Descriptor.hpp"
 #include <vector>
 #include <string>
 #include <unistd.h>
@@ -10,20 +11,21 @@
 #include <sys/types.h>
 #include <csignal>
 #include "utils.hpp"
+#include <utility>
 
-namespace artemreyt
+namespace Process
 {
     Process::Process(const std::string &path)
     {
-        std::vector<std::string> params_cxx = parse_params(path);
-        std::vector<char *> params_c;
-        for (std::string& str: params_cxx)
-            params_c.push_back(str.data());
-        params_c.push_back(nullptr);
+        int pipefd[2];
 
-        int pipefd_in[2], pipefd_out[2];
-        get_pipe(pipefd_in);
-        get_pipe(pipefd_out);
+        get_pipe(pipefd);
+        Descriptor pipe_in_read(pipefd[0]);
+        Descriptor pipe_in_write(pipefd[1]);
+
+        get_pipe(pipefd);
+        Descriptor pipe_out_read(pipefd[0]);
+        Descriptor pipe_out_write(pipefd[1]);
 
         child_pid_ = fork();
         switch (child_pid_)
@@ -32,23 +34,18 @@ namespace artemreyt
                 throw std::runtime_error("Isn't able to fork");
             case 0:
             {
-                ::close(pipefd_in[1]);
-                ::close(pipefd_out[0]);
-                dup2(pipefd_in[0], STDIN_FILENO);
-                dup2(pipefd_out[1], STDOUT_FILENO);
+                pipe_in_read.dup2(STDIN_FILENO);
+                pipe_out_write.dup2(STDOUT_FILENO);
 
-                if (execvp(params_c[0], params_c.data()))
+                if (try_exec(path))
                 {
                     std::string msg = "Isn't able to execute " + path;
                     throw std::runtime_error(msg.c_str());
                 }
             }
             default:
-
-                child_stdin_ = pipefd_in[1];
-                child_stdout_ = pipefd_out[0];
-                ::close(pipefd_in[0]);
-                ::close(pipefd_out[1]);
+                child_stdin_ = std::move(pipe_in_write);
+                child_stdout_ = std::move(pipe_out_read);
         }
     }
 
@@ -59,25 +56,25 @@ namespace artemreyt
         waitpid(child_pid_, 0, 0);
     }
 
-    size_t Process::write(const void *data, size_t len)
+    ssize_t Process::write(const void *data, size_t len)
     {
-        return ::write(child_stdin_, data, len);
+        return ::write(child_stdin_.get_fd(), data, len);
     }
 
-    size_t Process::read(void *data, size_t len)
+    ssize_t Process::read(void *data, size_t len)
     {
-        return ::read(child_stdout_, data, len);
+        return ::read(child_stdout_.get_fd(), data, len);
     }
 
     void Process::closeStdin()
     {
-        ::close(child_stdin_);
+        child_stdin_.close();
     }
 
     void Process::close()
     {
         closeStdin();
-        ::close(child_stdin_);
+        child_stdout_.close();
     }
 
     void Process::writeExact(const void *data, size_t len)
@@ -120,17 +117,17 @@ namespace artemreyt
 
     bool Process::isReadable() const
     {
-        return fcntl(child_stdout_, F_GETFL) != -1;
+        return child_stdout_.is_valid();
     }
 
     int Process::getStdin() const
     {
-        return child_stdin_;
+        return child_stdin_.get_fd();
     }
 
     int Process::getStdout() const
     {
-        return child_stdout_;
+        return child_stdout_.get_fd();
     }
 }
 

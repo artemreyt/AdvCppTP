@@ -1,9 +1,22 @@
 #include "utils.hpp"
+#include "ProcError.hpp"
 #include <string>
 #include <vector>
 #include <csignal>
 #include <unistd.h>
 #include <stdexcept>
+
+int try_exec(const std::string &path)
+{
+    std::vector<std::string> params_cxx = parse_params(path);
+    std::vector<char *> params_c;
+    for (std::string& str: params_cxx)
+        params_c.push_back(str.data());
+    params_c.push_back(nullptr);
+
+    return execvp(params_c[0], params_c.data());
+}
+
 
 std::vector<std::string> parse_params(const std::string& path)
 {
@@ -26,6 +39,6 @@ std::vector<std::string> parse_params(const std::string& path)
 void get_pipe(int pipefd[2])
 {
     if (pipe(pipefd) < 0)
-        throw std::runtime_error("Pipe error");
+        throw Process::PipeError();
 }
 

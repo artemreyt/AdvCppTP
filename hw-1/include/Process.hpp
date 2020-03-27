@@ -3,18 +3,18 @@
 
 #include <string>
 #include <cstddef>
-#include <vector>
+#include "Descriptor.hpp"
 
-namespace artemreyt
+namespace Process
 {
     class Process
     {
     public:
         explicit Process(const std::string &path);
         ~Process();
-        size_t write(const void *data, size_t len);
+        ssize_t write(const void *data, size_t len);
         void writeExact(const void *data, size_t len);
-        size_t read(void *data, size_t len);
+        ssize_t read(void *data, size_t len);
         void readExact(void *data, size_t len);
 
         bool isReadable() const;
@@ -26,8 +26,9 @@ namespace artemreyt
 
     private:
         pid_t child_pid_;
-        int child_stdin_;
-        int child_stdout_;
+
+        Descriptor child_stdin_;
+        Descriptor child_stdout_;
     };
 }
 

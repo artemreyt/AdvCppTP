@@ -5,8 +5,8 @@
 
 namespace Protocol
 {
-    int read(int fd, std::string &buffer);
-    int write(int fd, const std::string &data);
+    ssize_t read(int fd, std::string &buffer);
+    ssize_t write(int fd, const std::string &data);
 }
 
 #endif //PROC_PROTOCOL_HPP
