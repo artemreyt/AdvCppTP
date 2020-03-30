@@ -13,7 +13,7 @@ namespace Logger
         return logger;
     }
 
-    bool Logger::set_global_logger(t_LoggerType type, const char *filename)
+    void Logger::set_global_logger(t_LoggerType type, const char *filename)
     {
         std::unique_ptr<BaseLogger> new_logger;
         t_level level = global_logger_->get_level();
@@ -25,11 +25,10 @@ namespace Logger
         else if (type == t_LoggerType::FILE_LOGGER)
         {
             if (!filename)
-                return false;
+                return;
             new_logger = std::make_unique<FileLogger>(filename, level);
         }
         global_logger_.swap(new_logger);
-        return true;
     }
 
     BaseLogger *Logger::get_global_logger()

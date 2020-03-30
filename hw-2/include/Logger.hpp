@@ -6,19 +6,12 @@
 
 namespace Logger
 {
-    enum class t_LoggerType
-    {
-        STDOUT_LOGGER,
-        STDERR_LOGGER,
-        FILE_LOGGER
-    };
-
     class Logger
     {
     public:
         static Logger& get_instance();
-        bool set_global_logger(t_LoggerType type, const char *filename=nullptr);
-        BaseLogger *get_global_logger();
+        void set_global_logger(std::unique_ptr<BaseLogger> logger);
+        std::unique_ptr<BaseLogger> &get_global_logger();
 
         Logger(const Logger &logger) = delete;
         Logger& operator=(const Logger &rhs) = delete;
@@ -30,9 +23,9 @@ namespace Logger
     };
 
 
-    void create_file_logger(const std::string &filename);
-    void create_stdout_logger();
-    void create_stderr_logger();
+    std::unique_ptr<FileLogger> create_file_logger(const std::string &filename);
+    std::unique_ptr<StdoutLogger> create_stdout_logger();
+    std::unique_ptr<StderrLogger> create_stderr_logger();
 
     void debug(const std::string &msg);
     void info(const std::string &msg);
