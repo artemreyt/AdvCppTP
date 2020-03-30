@@ -127,9 +127,9 @@ void set_logger(int argc, char **argv)
             case 0:
             {
                 if (long_options[index].name == std::string("log-to-file"))
-                    Logger::create_file_logger(optarg);
+                    Logger::Logger::set_global_logger(Logger::create_file_logger(optarg));
                 else if (long_options[index].name == std::string("stderr"))
-                    Logger::create_stderr_logger();
+                    Logger::Logger::set_global_logger(Logger::create_stderr_logger());
                 break;
             }
             default:

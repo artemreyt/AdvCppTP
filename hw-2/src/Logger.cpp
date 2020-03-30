@@ -4,7 +4,7 @@
 namespace Logger
 {
     Logger::Logger():
-            global_logger_(std::make_unique<StdoutLogger>())
+            global_logger_(create_stdout_logger())
     {}
 
     Logger& Logger::get_instance()
@@ -13,43 +13,30 @@ namespace Logger
         return logger;
     }
 
-    void Logger::set_global_logger(t_LoggerType type, const char *filename)
+    void Logger::set_global_logger(std::unique_ptr<BaseLogger> new_logger)
     {
-        std::unique_ptr<BaseLogger> new_logger;
-        t_level level = global_logger_->get_level();
-
-        if (type == t_LoggerType::STDOUT_LOGGER)
-            new_logger = std::make_unique<StdoutLogger>(level);
-        else if (type == t_LoggerType::STDERR_LOGGER)
-            new_logger = std::make_unique<StderrLogger>(level);
-        else if (type == t_LoggerType::FILE_LOGGER)
-        {
-            if (!filename)
-                return;
-            new_logger = std::make_unique<FileLogger>(filename, level);
-        }
-        global_logger_.swap(new_logger);
+        get_instance().global_logger_.swap(new_logger);
     }
 
-    BaseLogger *Logger::get_global_logger()
+    std::unique_ptr<BaseLogger> &Logger::get_global_logger()
     {
-        return global_logger_.get();
+        return get_instance().global_logger_;
     }
 
 
-    void create_file_logger(const std::string &filename)
+    std::unique_ptr<FileLogger> create_file_logger(const std::string &filename)
     {
-        Logger::get_instance().set_global_logger(t_LoggerType::FILE_LOGGER, filename.c_str());
+        return std::make_unique<FileLogger>(filename);
     }
 
-    void create_stdout_logger()
+    std::unique_ptr<StdoutLogger> create_stdout_logger()
     {
-        Logger::get_instance().set_global_logger(t_LoggerType::STDOUT_LOGGER);
+        return std::make_unique<StdoutLogger>();
     }
 
-    void create_stderr_logger()
+    std::unique_ptr<StderrLogger> create_stderr_logger()
     {
-        Logger::get_instance().set_global_logger(t_LoggerType::STDERR_LOGGER);
+        return std::make_unique<StderrLogger>();
     }
 
     void debug(const std::string &msg)

@@ -8,7 +8,7 @@ namespace Logger
     class LogError: std::exception
     {
     public:
-        LogError(const char *err_msg);
+        explicit LogError(const std::string &err_msg);
         const char *what() const noexcept override;
 
     protected:
@@ -18,19 +18,7 @@ namespace Logger
     class LogRuntimeError: public LogError
     {
     public:
-        LogRuntimeError(const char *err_msg);
-    };
-
-
-    class UnknownLevelError: public LogError
-    {
-    public:
-        UnknownLevelError(Logger::t_level level_got_,
-                           const char *msg="Unknown Log Level got.");
-        t_level get_level() const noexcept;
-
-    private:
-        t_level level_got_;
+        explicit LogRuntimeError(const std::string &err_msg);
     };
 }
 

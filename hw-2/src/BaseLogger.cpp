@@ -5,16 +5,25 @@
 #include <iostream>
 #include <fstream>
 #include <string_view>
+#include <map>
 
 namespace Logger
 {
+    const std::map<t_level, std::string> g_level_invert =
+    {
+            {t_level::DEBUG,   "DEBUG"},
+            {t_level::INFO,    "INFO"},
+            {t_level::WARNING, "WARN"},
+            {t_level::ERROR,   "ERROR"}
+    };
+
     BaseLogger::BaseLogger(std::ostream &stream, t_level level):
         stream_(stream), level_(level)
     {}
 
     void BaseLogger::debug(const std::string &msg)
     {
-        if (level_ == t_level::DEBUG)
+        if (level_ >= t_level::DEBUG)
             log(msg, t_level::DEBUG);
     }
 
@@ -32,7 +41,8 @@ namespace Logger
 
     void BaseLogger::error(const std::string &msg)
     {
-        log(msg, t_level::ERROR);
+        if (level_ >= t_level::ERROR)
+            log(msg, t_level::ERROR);
     }
 
     void BaseLogger::log(const std::string &msg, t_level level)
@@ -40,16 +50,7 @@ namespace Logger
         std::ostringstream note;
         try
         {
-            if (level == t_level::DEBUG)
-                note << "DEBUG";
-            else if (level == t_level::INFO)
-                note << "INFO";
-            else if (level == t_level::WARNING)
-                note << "WARNING";
-            else if (level == t_level::ERROR)
-                note << "ERROR";
-            else
-                throw UnknownLevelError(level);
+            note << g_level_invert.at(level);
 
             std::time_t cur_time = std::time(nullptr);
             if (cur_time != -1)
@@ -76,8 +77,6 @@ namespace Logger
 
     void BaseLogger::set_level(t_level level)
     {
-        if (level > t_level::DEBUG)
-            throw UnknownLevelError(level);
         level_ = level;
     }
 
@@ -100,6 +99,10 @@ namespace Logger
     {}
 
     FileLogger::FileLogger(const std::string &path, t_level level):
-        outfile(path), BaseLogger(outfile, level)
+        outfile_(path), BaseLogger(outfile_, level)
+    {}
+
+    FileLogger::FileLogger(Logger::FileLogger &&other) noexcept:
+        outfile_(std::move(other.outfile_)), BaseLogger(outfile_, other.level_)
     {}
 }
