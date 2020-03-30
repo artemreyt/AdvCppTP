@@ -10,30 +10,37 @@ namespace Process
     class ProcError: public std::exception
     {
     public:
+        ProcError() = default;
+        explicit ProcError(const std::string &msg);
         const char *what() const noexcept override ;
 
     protected:
-        const std::string msg_;
+        const std::string msg_ = "Process::Process error";
     };
 
     class PipeError: public ProcError
     {
     public:
-        PipeError() = default;
-
-    protected:
-       const std::string msg_ = "Pipe creation error";
+        explicit PipeError(const std::string &msg="Pipe creation error");
     };
 
     class DupError: public ProcError
     {
     public:
-        DupError() = default;
-
-    protected:
-        const std::string msg_ = "Dup error";
+        explicit DupError(const std::string &msg="Dup error");
     };
 
+    class WriteError: public ProcError
+    {
+    public:
+        explicit WriteError(const std::string &msg="Write error");
+    };
+
+    class ReadError: public ProcError
+    {
+    public:
+        explicit ReadError(const std::string &msg="Read error");
+    };
 }
 
 #endif //PROC_PROCERROR_HPP

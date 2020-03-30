@@ -10,6 +10,8 @@ namespace Process
 
         explicit Descriptor(int fd);
 
+        Descriptor(Descriptor &&other) noexcept ;
+
         Descriptor &operator=(Descriptor &&other) noexcept;
 
         Descriptor &operator=(const Descriptor &other) noexcept ;

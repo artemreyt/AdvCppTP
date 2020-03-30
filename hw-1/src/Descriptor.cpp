@@ -10,6 +10,12 @@ namespace Process
             fd_{fd}
     {}
 
+    Descriptor::Descriptor(Descriptor &&other) noexcept:
+        fd_(other.fd_)
+    {
+        other.fd_ = -1;
+    }
+
     Descriptor::~Descriptor() noexcept
     {
         close();

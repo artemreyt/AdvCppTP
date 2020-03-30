@@ -1,5 +1,6 @@
 #include "Process.hpp"
 #include "Descriptor.hpp"
+#include "ProcError.hpp"
 #include <vector>
 #include <string>
 #include <unistd.h>
@@ -34,9 +35,14 @@ namespace Process
                 throw std::runtime_error("Isn't able to fork");
             case 0:
             {
+                pipe_in_write.close();
+                pipe_out_read.close();
+
                 pipe_in_read.dup2(STDIN_FILENO);
                 pipe_out_write.dup2(STDOUT_FILENO);
 
+                pipe_in_read.close();
+                pipe_out_write.close();
                 if (try_exec(path))
                 {
                     std::string msg = "Isn't able to execute " + path;
@@ -56,14 +62,22 @@ namespace Process
         waitpid(child_pid_, 0, 0);
     }
 
-    ssize_t Process::write(const void *data, size_t len)
+    size_t Process::write(const void *data, size_t len)
     {
-        return ::write(child_stdin_.get_fd(), data, len);
+        ssize_t bytes = ::write(child_stdin_.get_fd(), data, len);
+
+        if (bytes == -1)
+            throw WriteError();
+        return static_cast<size_t>(bytes);
     }
 
-    ssize_t Process::read(void *data, size_t len)
+    size_t Process::read(void *data, size_t len)
     {
-        return ::read(child_stdout_.get_fd(), data, len);
+        ssize_t bytes = ::read(child_stdout_.get_fd(), data, len);
+
+        if (bytes == -1)
+            throw ReadError();
+        return static_cast<size_t>(bytes);
     }
 
     void Process::closeStdin()
@@ -86,12 +100,12 @@ namespace Process
             if (bytes == -1)
             {
                 if (errno == EACCES)
-                    throw std::runtime_error("Access to file is denied");
+                    throw WriteError("Access to file is denied");
                 else
-                    throw std::runtime_error("Invalid file number");
+                    throw WriteError("Invalid file number");
             }
             else if (bytes == 0)
-                throw std::runtime_error("Can't write to file");
+                throw WriteError("Can't write to file");
             written += bytes;
         }
     }
@@ -105,12 +119,12 @@ namespace Process
             if (bytes == -1)
             {
                 if (errno == EACCES)
-                    throw std::runtime_error("Access to file is denied");
+                    throw ReadError("Access to file is denied");
                 else
-                    throw std::runtime_error("Invalid file number");
+                    throw ReadError("Invalid file number");
             }
             else if (bytes == 0)
-                throw std::runtime_error("EOF founded");
+                throw ReadError("EOF founded");
             was_read += bytes;
         }
     }
