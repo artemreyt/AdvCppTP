@@ -9,7 +9,7 @@
 
 namespace Logger
 {
-    const std::map<t_level, std::string> g_level_invert =
+    static const std::map<t_level, std::string> g_level_invert =
     {
             {t_level::DEBUG,   "DEBUG"},
             {t_level::INFO,    "INFO"},
@@ -17,9 +17,23 @@ namespace Logger
             {t_level::ERROR,   "ERROR"}
     };
 
-    BaseLogger::BaseLogger(std::ostream &stream, t_level level):
+    BaseLogger::BaseLogger(std::ostream *stream, t_level level):
         stream_(stream), level_(level)
     {}
+
+    BaseLogger::BaseLogger(BaseLogger &&other) noexcept :
+        stream_(other.stream_), level_(other.level_)
+    {
+        other.stream_ = nullptr;
+    }
+
+    BaseLogger &BaseLogger::operator=(BaseLogger &&other) noexcept
+    {
+        stream_ = other.stream_;
+        level_ = other.level_;
+        other.stream_ = nullptr;
+        return *this;
+    }
 
     void BaseLogger::debug(const std::string &msg)
     {
@@ -68,7 +82,7 @@ namespace Logger
 
         try
         {
-            stream_ << note.str() << std::endl;
+            *stream_ << note.str() << std::endl;
         } catch (std::ios_base::failure&)
         {
             throw LogRuntimeError("Fail to write to log stream");
@@ -87,22 +101,40 @@ namespace Logger
 
     void BaseLogger::flush()
     {
-        stream_.flush();
+        stream_->flush();
     }
 
     StdoutLogger::StdoutLogger(t_level level):
-        BaseLogger(std::cout, level)
+        BaseLogger(&std::cout, level)
     {}
 
+    StdoutLogger::StdoutLogger(StdoutLogger &&other) noexcept :
+        BaseLogger(std::move(other))
+    {}
+
+
     StderrLogger::StderrLogger(t_level level):
-        BaseLogger(std::cerr, level)
+        BaseLogger(&std::cerr, level)
+    {}
+
+    StderrLogger::StderrLogger(StderrLogger &&other) noexcept:
+        BaseLogger(std::move(other))
     {}
 
     FileLogger::FileLogger(const std::string &path, t_level level):
-        outfile_(path), BaseLogger(outfile_, level)
+        outfile_(path), BaseLogger(&outfile_, level)
     {}
 
     FileLogger::FileLogger(Logger::FileLogger &&other) noexcept:
-        outfile_(std::move(other.outfile_)), BaseLogger(outfile_, other.level_)
+        outfile_(std::move(other.outfile_)), BaseLogger(std::move(other))
     {}
+
+    FileLogger &FileLogger::operator=(FileLogger &&other) noexcept
+    {
+        stream_ = other.stream_;
+        outfile_ = std::move(other.outfile_);
+        level_ = other.level_;
+        other.stream_ = nullptr;
+        return *this;
+    }
 }

@@ -11,7 +11,7 @@ namespace Logger
     public:
         static Logger& get_instance();
         static void set_global_logger(std::unique_ptr<BaseLogger> logger);
-        static std::unique_ptr<BaseLogger> &get_global_logger();
+        static BaseLogger *get_global_logger();
 
         Logger(const Logger &logger) = delete;
         Logger& operator=(const Logger &rhs) = delete;

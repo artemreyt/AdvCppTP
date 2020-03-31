@@ -15,12 +15,13 @@ namespace Logger
 
     void Logger::set_global_logger(std::unique_ptr<BaseLogger> new_logger)
     {
-        get_instance().global_logger_.swap(new_logger);
+        if (new_logger)
+            get_instance().global_logger_ = std::move(new_logger);
     }
 
-    std::unique_ptr<BaseLogger> &Logger::get_global_logger()
+    BaseLogger *Logger::get_global_logger()
     {
-        return get_instance().global_logger_;
+        return get_instance().global_logger_.get();
     }
 
 

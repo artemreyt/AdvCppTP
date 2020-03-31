@@ -20,7 +20,11 @@ namespace Logger
     class BaseLogger
     {
     public:
-        BaseLogger(std::ostream &stream, t_level level);
+        BaseLogger(std::ostream *stream, t_level level);
+        BaseLogger(BaseLogger &&other) noexcept ;
+
+        BaseLogger &operator=(const BaseLogger& other) noexcept = default;
+        BaseLogger &operator=(BaseLogger &&other) noexcept ;
 
         void debug(const std::string &msg);
         void info(const std::string &msg);
@@ -32,7 +36,7 @@ namespace Logger
 
     protected:
         t_level level_;
-        std::ostream &stream_;
+        std::ostream *stream_;
 
     private:
         virtual void log(const std::string &msg, t_level level);
@@ -43,10 +47,10 @@ namespace Logger
     {
     public:
         explicit StdoutLogger(t_level level = t_level::INFO);
-        explicit StdoutLogger(StdoutLogger &&other) = delete;
+        StdoutLogger(StdoutLogger &&other) noexcept ;
 
-        StdoutLogger &operator=(const StdoutLogger &other) = default;
-        StdoutLogger &operator=(StdoutLogger &&other) = delete;
+        StdoutLogger &operator=(const StdoutLogger &other) noexcept = default;
+        StdoutLogger &operator=(StdoutLogger &&other) noexcept = default;
     };
 
 
@@ -54,10 +58,10 @@ namespace Logger
     {
     public:
         explicit StderrLogger(t_level level = t_level::INFO);
-        explicit StderrLogger(StderrLogger &&other) = delete;
+        StderrLogger(StderrLogger &&other) noexcept ;
 
-        StderrLogger &operator=(const StderrLogger &other) = default;
-        StderrLogger &operator=(StderrLogger &&other) = delete;
+        StderrLogger &operator=(const StderrLogger &other) noexcept = default;
+        StderrLogger &operator=(StderrLogger &&other) noexcept = default;
     };
 
 
@@ -67,8 +71,8 @@ namespace Logger
         explicit FileLogger(const std::string &path, t_level level = t_level::INFO);
         FileLogger(FileLogger &&other) noexcept;
 
-        FileLogger &operator=(const FileLogger &other) = delete;
-        FileLogger &operator=(FileLogger &&other) = default;
+        FileLogger &operator=(const FileLogger &other) = delete ;
+        FileLogger &operator=(FileLogger &&other) noexcept ;
 
     private:
         std::ofstream outfile_;
