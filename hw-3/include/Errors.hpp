@@ -8,8 +8,8 @@ namespace tcp {
 
     class error: public std::exception {
     public:
-        error(const std::string &msg);
-        virtual const char *what() const noexcept override;
+        explicit error(std::string msg="tcp::error");
+        const char *what() const noexcept override;
 
     protected:
         std::string msg_;
@@ -17,18 +17,28 @@ namespace tcp {
 
     class socket_error: public error {
     public:
-        socket_error(const std::string &msg="Socket error");
+        explicit socket_error(std::string msg="Socket error");
     };
 
     class bad_ip_address: public socket_error {
     public:
-        bad_ip_address(const std::string& ip);
-        virtual const char *what() const noexcept override;
+        explicit bad_ip_address(std::string ip);
         const std::string &get_ip() const;
 
     private:
         std::string ip_;
     };
+
+    class connection_error: public error {
+    public:
+        explicit connection_error(std::string msg="Connection error");
+    };
+
+    class accept_error: public error {
+    public:
+        explicit accept_error(std::string msg="Accept error");
+    };
+
 }
 
 

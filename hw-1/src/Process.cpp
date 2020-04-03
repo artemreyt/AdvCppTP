@@ -64,7 +64,7 @@ namespace Process
 
     size_t Process::write(const void *data, size_t len)
     {
-        ssize_t bytes = ::write(child_stdin_.get_fd(), data, len);
+        ssize_t bytes = ::write(child_stdin_.data(), data, len);
 
         if (bytes == -1)
             throw WriteError();
@@ -73,7 +73,7 @@ namespace Process
 
     size_t Process::read(void *data, size_t len)
     {
-        ssize_t bytes = ::read(child_stdout_.get_fd(), data, len);
+        ssize_t bytes = ::read(child_stdout_.data(), data, len);
 
         if (bytes == -1)
             throw ReadError();
@@ -136,12 +136,12 @@ namespace Process
 
     int Process::getStdin() const
     {
-        return child_stdin_.get_fd();
+        return child_stdin_.data();
     }
 
     int Process::getStdout() const
     {
-        return child_stdout_.get_fd();
+        return child_stdout_.data();
     }
 }
 

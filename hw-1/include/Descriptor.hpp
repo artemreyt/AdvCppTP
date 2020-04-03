@@ -20,7 +20,9 @@ namespace Process
 
         void close() noexcept;
 
-        int get_fd() const noexcept;
+        operator int() const noexcept ;
+
+        int data() const noexcept;
 
         bool is_valid() const noexcept ;
 

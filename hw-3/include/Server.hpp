@@ -7,12 +7,15 @@
 
 #include <string>
 #include <cstdint>
+#include <memory>
+#include "Descriptor.hpp"
+#include "Connection.hpp"
 
 namespace tcp {
 
     class Server {
     public:
-        Server::Server(const std::string &ip, uint16_t port);
+        Server(const std::string &ip, uint16_t port);
         ~Server() noexcept;
 
         Connection accept();
@@ -22,7 +25,7 @@ namespace tcp {
         void close();
 
     protected:
-        int fd_;
+        Process::Descriptor fd_;
     };
 }
 
