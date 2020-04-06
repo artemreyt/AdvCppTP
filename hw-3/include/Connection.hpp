@@ -1,9 +1,8 @@
 #ifndef TCP_CONNECTION_HPP
 #define TCP_CONNECTION_HPP
 
-
-#include <string>
 #include "Descriptor.hpp"
+#include <string>
 
 namespace tcp {
 

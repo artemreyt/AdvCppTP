@@ -5,11 +5,11 @@
 #ifndef TCP_SERVER_HPP
 #define TCP_SERVER_HPP
 
+#include "Descriptor.hpp"
+#include "Connection.hpp"
 #include <string>
 #include <cstdint>
 #include <memory>
-#include "Descriptor.hpp"
-#include "Connection.hpp"
 
 namespace tcp {
 

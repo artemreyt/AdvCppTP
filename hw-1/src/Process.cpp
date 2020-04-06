@@ -43,11 +43,11 @@ namespace Process
 
                 pipe_in_read.close();
                 pipe_out_write.close();
-                if (try_exec(path))
-                {
-                    std::string msg = "Isn't able to execute " + path;
-                    throw std::runtime_error(msg.c_str());
-                }
+                try_exec(path);
+
+                std::string msg = "Isn't able to execute " + path;
+                throw std::runtime_error(msg.c_str());
+
             }
             default:
                 child_stdin_ = std::move(pipe_in_write);

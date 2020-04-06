@@ -1,8 +1,8 @@
 #include "Connection.hpp"
 #include "Server.hpp"
+#include "Errors.hpp"
 #include <iostream>
 #include <string>
-#include <Errors.hpp>
 
 int main() {
     tcp::Server server("127.0.0.1", 7777);
@@ -18,13 +18,15 @@ int main() {
 
         try {
             char c;
-            while ( true ) {
+            while (true) {
                 serverEndPoint.readExact(&c, 1);
                 std::cout << c;
             }
         } catch (const tcp::error &err) {
+            std::cerr << err.what() << "(likely connection is closed)" << std::endl;
+        } catch (const std::exception& err) {
             std::cerr << err.what() << std::endl;
-        } catch (...) {
+            std::cerr << "Exit server" << std::endl;
             break;
         }
 

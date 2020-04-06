@@ -12,6 +12,7 @@
 #include <utility>
 #include <Process.hpp>
 #include <unistd.h>
+#include <cstring>
 
 namespace tcp {
 
@@ -76,7 +77,7 @@ namespace tcp {
         {
             ssize_t bytes = write(static_cast<const char *>(data) + written, len - written);
             if (bytes <= 0) {
-                throw socket_error(std::string("writeExact error") + std::strerror(errno));
+                throw socket_error(std::string("writeExact error: ") + std::strerror(errno));
             }
             written += bytes;
         }
@@ -88,7 +89,7 @@ namespace tcp {
         {
             ssize_t bytes = read(static_cast<char *>(data) + was_read, len - was_read);
             if (bytes <= 0) {
-                throw socket_error(std::string("readExact error") + std::strerror(errno));
+                throw socket_error(std::string("readExact error: ") + std::strerror(errno));
             }
             was_read += bytes;
         }
@@ -104,7 +105,7 @@ namespace tcp {
     void Connection::set_timeout(int sec) {
         timeval timeout {.tv_sec = sec, .tv_usec = 0};
         if (setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
-            throw socket_error("Set timeout error");
+            throw socket_error(std::string("Set timeout error:") + std::strerror(errno));
         }
     }
 
