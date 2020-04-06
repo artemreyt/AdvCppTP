@@ -52,7 +52,7 @@ namespace tcp {
         }
 
         int optval = 1;
-        setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
         sockaddr_in addr {};
         addr.sin_family = AF_INET;

@@ -77,6 +77,7 @@ namespace tcp {
         {
             ssize_t bytes = write(static_cast<const char *>(data) + written, len - written);
             if (bytes <= 0) {
+                close();
                 throw socket_error(std::string("writeExact error: ") + std::strerror(errno));
             }
             written += bytes;
@@ -89,6 +90,7 @@ namespace tcp {
         {
             ssize_t bytes = read(static_cast<char *>(data) + was_read, len - was_read);
             if (bytes <= 0) {
+                close();
                 throw socket_error(std::string("readExact error: ") + std::strerror(errno));
             }
             was_read += bytes;
@@ -104,20 +106,23 @@ namespace tcp {
 
     void Connection::set_timeout(int sec) {
         timeval timeout {.tv_sec = sec, .tv_usec = 0};
-        if (setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0) {
+        if (setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO | SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
             throw socket_error(std::string("Set timeout error:") + std::strerror(errno));
         }
     }
 
-    void Connection::get_connection_info(std::string *dst_ip, uint16_t *dst_port,
-            std::string *src_ip, uint16_t *src_port) const {
-        if (dst_ip)
-            *dst_ip = dst_addr_;
-        if (dst_port)
-            *dst_port = dst_port_;
-        if (src_ip)
-            *src_ip = src_addr_;
-        if (src_port)
-            *src_port = src_port_;
+    const std::string &Connection::get_src_ip() const {
+        return src_addr_;
+    }
+
+    const std::string &Connection::get_dst_ip() const {
+        return dst_addr_;
+    }
+
+    const uint16_t &Connection::get_src_port() const {
+        return src_port_;
+    }
+    const uint16_t &Connection::get_dst_port() const {
+        return dst_port_;
     }
 }

@@ -29,9 +29,10 @@ namespace tcp {
         void close();
         void set_timeout(int sec);
 
-
-        void get_connection_info(std::string *dst_ip, uint16_t *dst_port,
-                    std::string *src_ip, uint16_t *src_port) const;
+        const std::string &get_src_ip() const;
+        const std::string &get_dst_ip() const;
+        const uint16_t &get_src_port() const;
+        const uint16_t &get_dst_port() const;
 
         friend class Server;
 
