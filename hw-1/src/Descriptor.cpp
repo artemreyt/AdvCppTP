@@ -28,7 +28,7 @@ namespace Process
         fd_ = -1;
     }
 
-    int Descriptor::get_fd() const noexcept
+    int Descriptor::data() const noexcept
     {
         return fd_;
     }
@@ -36,7 +36,7 @@ namespace Process
     Descriptor &Descriptor::operator=(Descriptor &&other) noexcept
     {
         close();
-        fd_ = other.get_fd();
+        fd_ = other.data();
         other.fd_ = -1;
         return *this;
     }
@@ -61,4 +61,10 @@ namespace Process
             throw DupError();
         return retv;
     }
+
+    Descriptor::operator int() const noexcept
+    {
+        return fd_;
+    }
+
 }
