@@ -39,6 +39,16 @@ namespace tcp {
         explicit accept_error(std::string msg="Accept error");
     };
 
+    class epoll_error : public error {
+    public:
+        explicit epoll_error(std::string msg="epoll error");
+    };
+
+    class epollAddError: public error {
+    public:
+        explicit epollAddError(std::string msg="Epoll add error");
+    };
+
 }
 
 

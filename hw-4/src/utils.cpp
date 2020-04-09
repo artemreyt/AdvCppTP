@@ -26,3 +26,15 @@ namespace tcp {
         Event->events = events;
     }
 }
+
+size_t
+std::hash<tcp::Connection>::operator()(const tcp::Connection &connection) const {
+    size_t h1 = std::hash<std::string>()(connection.get_dst_ip());
+
+    /* if port will change type */
+    size_t h2 = std::hash<std::remove_const_t<
+                    std::remove_reference_t<decltype(connection.get_dst_port())>
+                    >>()(connection.get_dst_port());
+    return h1 ^ (h2 << 1);
+}
+

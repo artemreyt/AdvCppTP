@@ -7,12 +7,11 @@
 #include <cstring>
 #include <cerrno>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <memory>
 #include <sys/epoll.h>
+#include <unordered_set>
 
 namespace tcp {
 
@@ -84,7 +83,7 @@ namespace tcp {
 
     void Server::eventLoop() {
         auto epollObject = createEpoll();
-        std::set<Connection> SlaveSockets;
+        std::unordered_set<Connection> SlaveSockets;
 
         while ( true ) {
             static epoll_event Events[MAX_EVENTS];
@@ -109,7 +108,7 @@ namespace tcp {
         }
     }
 
-    void Server::acceptClients(int epollObject, std::set<Connection> &slaveSockets) {
+    void Server::acceptClients(int epollObject, std::unordered_set<Connection> &slaveSockets) {
         int i = 0;
         while (i++ < MAX_EVENTS) {
             Connection con;
@@ -136,9 +135,8 @@ namespace tcp {
 
 
     void Server::addNewConnection(int epollObject, Connection &&connection,
-                                    std::set<Connection>& slaveSockets) {
-        std::pair<std::set<Connection>::iterator, bool> Iter;
-        Iter = slaveSockets.insert(std::move(connection));
+                                    std::unordered_set<Connection>& slaveSockets) {
+        auto Iter = slaveSockets.insert(std::move(connection));
         if (!Iter.second) {
             throw std::runtime_error("Error adding connection to set");
         }
@@ -155,12 +153,17 @@ namespace tcp {
     }
 
     void Server::handleClient(int epollObject, Connection &connection,
-                      uint32_t event, std::set<Connection> &SlaveSockets) {
+                      uint32_t event, std::unordered_set<Connection> &SlaveSockets) {
         if (event & EPOLLERR || event & EPOLLHUP) {
             connection.close();
             SlaveSockets.erase(connection);
         } else {
-            callback_(connection, event);
+            try {
+                callback_(connection, event);
+            } catch (...) {
+                connection.close();
+                SlaveSockets.erase(connection);
+            }
         }
     }
 

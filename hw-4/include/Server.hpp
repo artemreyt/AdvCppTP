@@ -10,7 +10,7 @@
 #include <string>
 #include <cstdint>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include <functional>
 #include <sys/epoll.h>
 
@@ -32,11 +32,12 @@ namespace tcp {
 
     protected:
         Process::Descriptor createEpoll();
-        void addNewConnection(int epollObject, Connection &&connection, std::set<Connection>& slaveSockets);
+        void addNewConnection(int epollObject, Connection &&connection,
+                        std::unordered_set<Connection>& slaveSockets);
         void addEvent(int epollObject, epoll_event *Event);
-        void acceptClients(int epollObject, std::set<Connection> &slaveSockets);
+        void acceptClients(int epollObject, std::unordered_set<Connection> &slaveSockets);
         void handleClient(int epollObject, Connection &connection,
-                        uint32_t event, std::set<Connection> &SlaveSockets);
+                        uint32_t event, std::unordered_set<Connection> &SlaveSockets);
 
         Process::Descriptor masterSocket_;
         Callback_t callback_;

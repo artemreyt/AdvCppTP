@@ -125,4 +125,8 @@ namespace tcp {
     const uint16_t &Connection::get_dst_port() const {
         return dst_port_;
     }
+
+    bool Connection::operator==(const Connection &other) const {
+        return this == &other;
+    }
 }

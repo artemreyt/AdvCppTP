@@ -8,17 +8,18 @@ namespace tcp {
 
     class Connection {
     public:
-        Connection(const std::string& ip, uint16_t port);
+        Connection(const std::string &ip, uint16_t port);
         Connection(Connection &&other) = default;
         Connection(const Connection &other) = delete;
 
-        Connection &operator=(const Connection& other) = delete;
-        Connection &operator=(Connection&& other) = default;
+        Connection &operator=(const Connection &other) = delete;
+        Connection &operator=(Connection &&other) = default;
 
+        bool operator==(const Connection &other) const;
         ~Connection();
 
-        void connect(const std::string& ip, uint16_t port);
-        bool is_opened() const;
+        void connect(const std::string &ip, uint16_t port);
+        [[nodiscard ]] bool is_opened() const;
 
         size_t write(const void *data, size_t size);
         size_t read(void *data, size_t size);
@@ -29,10 +30,10 @@ namespace tcp {
         void close();
         void set_timeout(int sec);
 
-        const std::string &get_src_ip() const;
-        const std::string &get_dst_ip() const;
-        const uint16_t &get_src_port() const;
-        const uint16_t &get_dst_port() const;
+        [[ nodiscard ]] const std::string &get_src_ip() const;
+        [[ nodiscard ]] const std::string &get_dst_ip() const;
+        [[ nodiscard ]] const uint16_t &get_src_port() const;
+        [[ nodiscard ]] const uint16_t &get_dst_port() const;
 
         friend class Server;
 
@@ -42,10 +43,9 @@ namespace tcp {
         Process::Descriptor fd_;
         std::string dst_addr_;
         std::string src_addr_;
-        uint16_t src_port_;
-        uint16_t dst_port_;
+        uint16_t src_port_{};
+        uint16_t dst_port_{};
     };
 }
-
 
 #endif // TCP_CONNECTION_HPP

@@ -26,4 +26,10 @@ namespace tcp {
 
     accept_error::accept_error(std::string msg) : error(std::move(msg)) {
     }
+
+    epoll_error::epoll_error(std::string msg): error(std::move(msg)) {
+    }
+
+    epollAddError::epollAddError(std::string msg): error(std::move(msg)) {
+    }
 }
