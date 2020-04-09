@@ -11,6 +11,7 @@
 namespace tcp {
     void get_binded_ip_port(int fd, std::string &ip, uint16_t &port);
     void createEvent(epoll_event *Event, void *ptr, uint32_t events);
+    int  set_nonblock(int fd);
 }
 
 /*

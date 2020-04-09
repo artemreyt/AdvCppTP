@@ -10,11 +10,12 @@
 #include <string>
 #include <cerrno>
 #include <utility>
-#include <Process.hpp>
 #include <unistd.h>
 #include <cstring>
 
 namespace tcp {
+
+    static const size_t MAX_BYTES_READ = 4096;
 
     Connection::Connection(const std::string &ip, uint16_t port) {
         connect(ip, port);
@@ -56,18 +57,23 @@ namespace tcp {
     }
 
     size_t Connection::write(const void *data, size_t size) {
-        ssize_t bytes = ::send(fd_.data(), data, size, 0);
+        ssize_t bytes = ::send(fd_.data(), data, size, MSG_NOSIGNAL);
 
+        if (bytes == -1 && errno == EINTR)
+            return write(data, size);
         if (bytes == -1)
             throw socket_error("Error to write");
         return static_cast<size_t>(bytes);
     }
 
-    size_t Connection::read(void *data, size_t size) {
-        ssize_t bytes = ::recv(fd_.data(), data, size, 0);
+    size_t Connection::read(size_t size) {
+        size = (size == -1) ? MAX_BYTES_READ : size;
+        std::string buffer(size + 1, '\0');
+        ssize_t bytes = ::recv(fd_, buffer.data(), size, MSG_NOSIGNAL);
 
         if (bytes == -1)
             throw socket_error(std::string("Read error:") + std::strerror(errno));
+        buffer_ += buffer;
         return static_cast<size_t>(bytes);
     }
 
@@ -84,11 +90,11 @@ namespace tcp {
         }
     }
 
-    void Connection::readExact(void *data, size_t len) {
+    void Connection::readExact(size_t len) {
         size_t was_read = 0;
         while (was_read < len)
         {
-            ssize_t bytes = read(static_cast<char *>(data) + was_read, len - was_read);
+            ssize_t bytes = read(len - was_read);
             if (bytes <= 0) {
                 close();
                 throw socket_error(std::string("readExact error: ") + std::strerror(errno));
@@ -102,7 +108,6 @@ namespace tcp {
             ::shutdown(fd_, SHUT_RDWR);
         fd_.close();
     }
-
 
     void Connection::set_timeout(int sec) {
         timeval timeout {.tv_sec = sec, .tv_usec = 0};
@@ -128,5 +133,13 @@ namespace tcp {
 
     bool Connection::operator==(const Connection &other) const {
         return this == &other;
+    }
+
+    const std::string &Connection::get_buffer() const {
+        return buffer_;
+    }
+
+    void Connection::clear_buffer() {
+        buffer_.clear();
     }
 }

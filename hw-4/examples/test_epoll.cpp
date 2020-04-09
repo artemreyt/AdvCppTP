@@ -7,12 +7,11 @@
 #include <iostream>
 #include <unistd.h>
 
-void callback(tcp::Connection &connection, tcp::event_t event) {
-    if (uint16_t(event) & uint16_t(tcp::event_t::READ_EVENT)) {
-        static char buffer[2];
-        size_t bytes = connection.read(buffer, 2);
-        connection.write(buffer, bytes);
-        sleep(1);
+void callback(tcp::Connection &connection, uint16_t event) {
+    if (event & tcp::READ_EVENT) {
+        size_t bytes = connection.read();
+        connection.write(connection.get_buffer().data(), bytes);
+        connection.clear_buffer();
     } else  {
         std::cout << "Write event came" << std::endl;
     }

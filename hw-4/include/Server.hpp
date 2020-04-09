@@ -15,12 +15,10 @@
 #include <sys/epoll.h>
 
 namespace tcp {
-    enum class event_t {
-        READ_EVENT = EPOLLIN,
-        WRITE_EVENT = EPOLLOUT
-    };
+    constexpr uint16_t  READ_EVENT = EPOLLIN;
+    constexpr uint16_t  WRITE_EVENT = EPOLLOUT;
 
-    typedef std::function<void(Connection&, event_t)> Callback_t;
+    typedef std::function<void(Connection&, uint16_t)> Callback_t;
 
     class Server {
     public:

@@ -112,7 +112,7 @@ namespace tcp {
 
     void Server::acceptClients(int epollObject, std::unordered_map<int, Connection> &slaveSockets) {
         int i = 0;
-        while (i++ < MAX_EVENTS) {
+        while (i < MAX_EVENTS) {
             Connection con;
             sockaddr_in client_addr{};
             socklen_t len = sizeof(client_addr);
@@ -126,12 +126,18 @@ namespace tcp {
                 else
                     throw accept_error(std::string("Accept failed: ") + std::strerror(errno));
             }
+
+            if (set_nonblock(connect_fd) == -1) {
+                continue;
+            }
+
             get_binded_ip_port(connect_fd.data(), con.src_addr_, con.src_port_);
             con.dst_addr_ = ::inet_ntoa(client_addr.sin_addr);
             con.dst_port_ = ntohs(client_addr.sin_port);
             con.fd_ = std::move(connect_fd);
 
             addNewConnection(epollObject, std::move(con), slaveSockets);
+            ++i;
         }
     }
 
@@ -157,12 +163,13 @@ namespace tcp {
         char buf;
 
         if (event & EPOLLERR || event & EPOLLHUP || (
-           (event & EPOLLIN) && (::recv(connection.fd_, &buf, 1, MSG_PEEK) == 0))
-           ){
+                event & EPOLLIN &&
+                ::recv(connection.fd_, &buf, 1, MSG_PEEK | MSG_NOSIGNAL) == 0
+                )) {
             deleteConnection(connection, slaveSockets);
         } else {
             try {
-                callback_(connection, static_cast<event_t>(event));
+                callback_(connection, event);
             } catch (...) {
                 deleteConnection(connection, slaveSockets);
             }
@@ -171,7 +178,6 @@ namespace tcp {
 
     void Server::deleteConnection(Connection &connection,
                           std::unordered_map<int, Connection> &slaveSockets) {
-        connection.fd_.close();
         slaveSockets.erase(connection.fd_);
     }
 

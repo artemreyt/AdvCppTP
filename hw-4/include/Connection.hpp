@@ -23,10 +23,10 @@ namespace tcp {
         [[nodiscard ]] bool is_opened() const;
 
         size_t write(const void *data, size_t size);
-        size_t read(void *data, size_t size);
+        size_t read(size_t size=-1);
 
         void writeExact(const void *data, size_t size);
-        void readExact(void *data, size_t size);
+        void readExact(size_t size);
 
         void close();
         void set_timeout(int sec);
@@ -36,6 +36,9 @@ namespace tcp {
         [[ nodiscard ]] const uint16_t &get_src_port() const;
         [[ nodiscard ]] const uint16_t &get_dst_port() const;
 
+        [[ nodiscard ]] const std::string &get_buffer() const;
+        void clear_buffer();
+
         friend class Server;
 
     protected:
@@ -44,6 +47,7 @@ namespace tcp {
         std::string src_addr_;
         uint16_t src_port_{};
         uint16_t dst_port_{};
+        std::string buffer_;
     };
 }
 
