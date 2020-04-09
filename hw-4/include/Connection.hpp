@@ -8,6 +8,7 @@ namespace tcp {
 
     class Connection {
     public:
+        Connection() = default;
         Connection(const std::string &ip, uint16_t port);
         Connection(Connection &&other) = default;
         Connection(const Connection &other) = delete;
@@ -38,8 +39,6 @@ namespace tcp {
         friend class Server;
 
     protected:
-        Connection() = default;
-
         Process::Descriptor fd_;
         std::string dst_addr_;
         std::string src_addr_;

@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/epoll.h>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace tcp {
 
@@ -65,7 +65,8 @@ namespace tcp {
 
         if (Epoll == -1) {
             close();
-            throw epoll_error(std::string("Epoll creation error: ") + std::strerror(errno));
+            throw epoll_error(std::string("Epoll creation error: ")
+                              + std::strerror(errno));
         }
 
         epoll_event Event {};
@@ -77,13 +78,14 @@ namespace tcp {
 
     void Server::addEvent(int epollObject, int fd, epoll_event *Event) {
         if (::epoll_ctl(epollObject, EPOLL_CTL_ADD, fd, Event) == -1) {
-            throw epollAddError(std::string("Epoll add error: ") + std::strerror(errno));
+            throw epollAddError(std::string("Epoll add error: ")
+                                + std::strerror(errno));
         }
     }
 
     void Server::eventLoop() {
         auto epollObject = createEpoll();
-        std::unordered_set<Connection> SlaveSockets;
+        std::unordered_map<int, Connection> SlaveSockets;
 
         while ( true ) {
             static epoll_event Events[MAX_EVENTS];
@@ -108,7 +110,7 @@ namespace tcp {
         }
     }
 
-    void Server::acceptClients(int epollObject, std::unordered_set<Connection> &slaveSockets) {
+    void Server::acceptClients(int epollObject, std::unordered_map<int, Connection> &slaveSockets) {
         int i = 0;
         while (i++ < MAX_EVENTS) {
             Connection con;
@@ -135,16 +137,13 @@ namespace tcp {
 
 
     void Server::addNewConnection(int epollObject, Connection &&connection,
-                                    std::unordered_set<Connection>& slaveSockets) {
-        auto Iter = slaveSockets.insert(std::move(connection));
-        if (!Iter.second) {
-            throw std::runtime_error("Error adding connection to set");
-        }
+            std::unordered_map<int, Connection>& slaveSockets) {
+        int fd = connection.fd_;
+        slaveSockets[connection.fd_] = std::move(connection);
 
         epoll_event Event {};
-        createEvent(&Event, const_cast<Connection *>(&(*Iter.first)),
-                EPOLLIN );
-        addEvent(epollObject, Iter.first->fd_, &Event);
+        createEvent(&Event, &slaveSockets[fd], EPOLLIN);
+        addEvent(epollObject, fd, &Event);
     }
 
     void Server::set_max_connect(int max_connect) {
@@ -154,18 +153,26 @@ namespace tcp {
     }
 
     void Server::handleClient(int epollObject, Connection &connection,
-                      uint32_t event, std::unordered_set<Connection> &SlaveSockets) {
-        if (event & EPOLLERR || event & EPOLLHUP) {
-            connection.close();
-            SlaveSockets.erase(connection);
+                      uint32_t event, std::unordered_map<int, Connection> &slaveSockets) {
+        char buf;
+
+        if (event & EPOLLERR || event & EPOLLHUP || (
+           (event & EPOLLIN) && (::recv(connection.fd_, &buf, 1, MSG_PEEK) == 0))
+           ){
+            deleteConnection(connection, slaveSockets);
         } else {
             try {
                 callback_(connection, static_cast<event_t>(event));
             } catch (...) {
-                connection.close();
-                SlaveSockets.erase(connection);
+                deleteConnection(connection, slaveSockets);
             }
         }
+    }
+
+    void Server::deleteConnection(Connection &connection,
+                          std::unordered_map<int, Connection> &slaveSockets) {
+        connection.fd_.close();
+        slaveSockets.erase(connection.fd_);
     }
 
     void Server::changeCallback(Callback_t callback) {
