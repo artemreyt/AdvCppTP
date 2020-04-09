@@ -15,8 +15,12 @@
 #include <sys/epoll.h>
 
 namespace tcp {
+    enum class event_t {
+        READ_EVENT = EPOLLIN,
+        WRITE_EVENT = EPOLLOUT
+    };
 
-    typedef std::function<void(Connection&, uint32_t)> Callback_t;
+    typedef std::function<void(Connection&, event_t)> Callback_t;
 
     class Server {
     public:
@@ -34,7 +38,7 @@ namespace tcp {
         Process::Descriptor createEpoll();
         void addNewConnection(int epollObject, Connection &&connection,
                         std::unordered_set<Connection>& slaveSockets);
-        void addEvent(int epollObject, epoll_event *Event);
+        void addEvent(int epollObject, int fd, epoll_event *Event);
         void acceptClients(int epollObject, std::unordered_set<Connection> &slaveSockets);
         void handleClient(int epollObject, Connection &connection,
                         uint32_t event, std::unordered_set<Connection> &SlaveSockets);

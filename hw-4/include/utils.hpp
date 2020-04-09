@@ -10,7 +10,7 @@
 
 namespace tcp {
     void get_binded_ip_port(int fd, std::string &ip, uint16_t &port);
-    void createEvent(epoll_event *Event, int fd, void *ptr, uint32_t events);
+    void createEvent(epoll_event *Event, void *ptr, uint32_t events);
 }
 
 /*

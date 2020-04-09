@@ -69,14 +69,14 @@ namespace tcp {
         }
 
         epoll_event Event {};
-        createEvent(&Event, masterSocket_, nullptr, EPOLLIN);
-        addEvent(Epoll, &Event);
+        createEvent(&Event, &masterSocket_, EPOLLIN);
+        addEvent(Epoll, masterSocket_, &Event);
 
-        return Epoll;
+        return std::move(Epoll);
     }
 
-    void Server::addEvent(int epollObject, epoll_event *Event) {
-        if (::epoll_ctl(epollObject, EPOLL_CTL_ADD, masterSocket_, Event) == -1) {
+    void Server::addEvent(int epollObject, int fd, epoll_event *Event) {
+        if (::epoll_ctl(epollObject, EPOLL_CTL_ADD, fd, Event) == -1) {
             throw epollAddError(std::string("Epoll add error: ") + std::strerror(errno));
         }
     }
@@ -95,13 +95,13 @@ namespace tcp {
             }
 
             for (int i = 0; i < nfds; ++i) {
-                int fd = Events[i].data.fd;
-                auto event = Events[i].events;
-                Connection &connection = *(static_cast<Connection *>(Events[i].data.ptr));
+                auto ptr = Events[i].data.ptr;
 
-                if (fd == masterSocket_) {
+                if (ptr == &masterSocket_) {
                     acceptClients(epollObject, SlaveSockets);
                 } else {
+                    Connection &connection = *(static_cast<Connection *>(ptr));
+                    auto event = Events[i].events;
                     handleClient(epollObject, connection, event, SlaveSockets);
                 }
             }
@@ -142,8 +142,9 @@ namespace tcp {
         }
 
         epoll_event Event {};
-        createEvent(&Event, Iter.first->fd_, &Iter.first, EPOLLIN | EPOLLOUT);
-        addEvent(epollObject, &Event);
+        createEvent(&Event, const_cast<Connection *>(&(*Iter.first)),
+                EPOLLIN );
+        addEvent(epollObject, Iter.first->fd_, &Event);
     }
 
     void Server::set_max_connect(int max_connect) {
@@ -159,7 +160,7 @@ namespace tcp {
             SlaveSockets.erase(connection);
         } else {
             try {
-                callback_(connection, event);
+                callback_(connection, static_cast<event_t>(event));
             } catch (...) {
                 connection.close();
                 SlaveSockets.erase(connection);

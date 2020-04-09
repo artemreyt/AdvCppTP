@@ -20,8 +20,7 @@ namespace tcp {
         port = ntohs(addr.sin_port);
     }
 
-    void createEvent(epoll_event *Event, int fd, void *ptr, uint32_t events) {
-        Event->data.fd = fd;
+    void createEvent(epoll_event *Event, void *ptr, uint32_t events) {
         Event->data.ptr = ptr;
         Event->events = events;
     }
