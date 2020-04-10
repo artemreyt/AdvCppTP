@@ -44,7 +44,7 @@ namespace tcp {
         explicit epoll_error(std::string msg="epoll error");
     };
 
-    class epollAddError: public error {
+    class epollAddError: public epoll_error {
     public:
         explicit epollAddError(std::string msg="Epoll add error");
     };

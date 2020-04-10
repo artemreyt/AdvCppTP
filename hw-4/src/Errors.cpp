@@ -30,6 +30,6 @@ namespace tcp {
     epoll_error::epoll_error(std::string msg): error(std::move(msg)) {
     }
 
-    epollAddError::epollAddError(std::string msg): error(std::move(msg)) {
+    epollAddError::epollAddError(std::string msg): epoll_error(std::move(msg)) {
     }
 }

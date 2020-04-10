@@ -85,20 +85,19 @@ namespace tcp {
     void Server::EpollManager::handleClient(Connection &connection, uint32_t &event) {
         char buf;
 
-        if (event & EPOLLERR || event & EPOLLHUP || (
-                event & EPOLLIN &&
-                ::recv(connection.fd_, &buf, 1, MSG_PEEK | MSG_NOSIGNAL) == 0)
-            ) {
+        if (event & EPOLLERR || event & EPOLLHUP) {
             deleteConnection(connection);
         } else {
+            uint16_t old_event = event;
             try {
-                uint16_t old_event = event;
                 server_.callback_(connection, event);
-                if (old_event != event) {
-                    changeEvent(connection, event);
-                }
             } catch (...) {
                 deleteConnection(connection);
+            }
+            if (!connection.is_opened()) {
+                deleteConnection(connection);
+            } else if (old_event != event) {
+                changeEvent(connection, event);
             }
         }
     }
