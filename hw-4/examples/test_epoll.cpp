@@ -1,9 +1,7 @@
-//
-// Created by artem on 09.04.2020.
-//
-
 #include "Server.hpp"
 #include "Connection.hpp"
+#include "Errors.hpp"
+#include <stdexcept>
 #include <iostream>
 #include <unistd.h>
 
@@ -19,6 +17,18 @@ void callback(tcp::Connection &connection, uint16_t event) {
 
 int main() {
     tcp::Server server("0.0.0.0", 8080, callback);
-    server.eventLoop();
+    while (true) {
+        try {
+            server.eventLoop();
+        } catch (tcp::error &ex) {
+            std::cerr << ex.what() << std::endl;
+            continue;
+        } catch(std::exception &ex) {
+            std::cerr << ex.what() << std::endl;
+        } catch (...) {
+            std::cerr << "Unknown exception" << std::endl;
+        }
+        break;
+    }
     return 0;
 }

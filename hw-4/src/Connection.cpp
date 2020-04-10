@@ -15,7 +15,7 @@
 
 namespace tcp {
 
-    static const size_t MAX_BYTES_READ = 4096;
+    static const size_t MAX_BYTES_READ = 512;
 
     Connection::Connection(const std::string &ip, uint16_t port) {
         connect(ip, port);

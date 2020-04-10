@@ -33,18 +33,25 @@ namespace tcp {
         void close();
 
     protected:
-        Process::Descriptor createEpoll();
-        void addNewConnection(int epollObject, Connection &&connection,
-                        std::unordered_map<int, Connection>& slaveSockets);
-        void deleteConnection(Connection &connection,
-                        std::unordered_map<int, Connection> &slaveSockets);
-        void addEvent(int epollObject, int fd, epoll_event *Event);
-        void acceptClients(int epollObject, std::unordered_map<int, Connection> &slaveSockets);
-        void handleClient(int epollObject, Connection &connection,
-                        uint32_t event, std::unordered_map<int, Connection> &SlaveSockets);
-
         Process::Descriptor masterSocket_;
         Callback_t callback_;
+
+        class EpollManager {
+        public:
+            explicit EpollManager(Server &server);
+            void run();
+
+        private:
+            void addNewConnection(Connection &&connection);
+            void deleteConnection(Connection &connection);
+            void addEvent(int fd, epoll_event *Event);
+            void acceptClients();
+            void handleClient(Connection &connection, uint32_t event);
+
+            Process::Descriptor epollObject_;
+            Server &server_;
+            std::unordered_map<int, Connection> slaveSockets_;
+        };
     };
 }
 

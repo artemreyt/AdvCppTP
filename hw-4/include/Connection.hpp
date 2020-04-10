@@ -35,7 +35,6 @@ namespace tcp {
         [[ nodiscard ]] const std::string &get_dst_ip() const;
         [[ nodiscard ]] const uint16_t &get_src_port() const;
         [[ nodiscard ]] const uint16_t &get_dst_port() const;
-
         [[ nodiscard ]] const std::string &get_buffer() const;
         void clear_buffer();
 
