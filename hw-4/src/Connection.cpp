@@ -73,6 +73,7 @@ namespace tcp {
 
         if (bytes == -1)
             throw socket_error(std::string("Read error:") + std::strerror(errno));
+        buffer.resize(bytes);
         buffer_ += buffer;
         return static_cast<size_t>(bytes);
     }

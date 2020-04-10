@@ -1,2 +1,2 @@
-add_executable(test_epoll.out test_epoll.cpp)
-target_link_libraries(test_epoll.out tcp)
+add_executable(echo_server.out echo_server.cpp)
+target_link_libraries(echo_server.out tcp)

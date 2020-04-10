@@ -15,10 +15,10 @@
 #include <sys/epoll.h>
 
 namespace tcp {
-    constexpr uint16_t  READ_EVENT = EPOLLIN;
-    constexpr uint16_t  WRITE_EVENT = EPOLLOUT;
+    constexpr uint32_t  READ_EVENT = EPOLLIN;
+    constexpr uint32_t  WRITE_EVENT = EPOLLOUT;
 
-    typedef std::function<void(Connection&, uint16_t)> Callback_t;
+    typedef std::function<void(Connection&, uint32_t&)> Callback_t;
 
     class Server {
     public:
@@ -45,8 +45,9 @@ namespace tcp {
             void addNewConnection(Connection &&connection);
             void deleteConnection(Connection &connection);
             void addEvent(int fd, epoll_event *Event);
+            void changeEvent(Connection &connection, uint32_t new_event);
             void acceptClients();
-            void handleClient(Connection &connection, uint32_t event);
+            void handleClient(Connection &connection, uint32_t &event);
 
             Process::Descriptor epollObject_;
             Server &server_;

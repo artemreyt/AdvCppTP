@@ -5,13 +5,19 @@
 #include <iostream>
 #include <unistd.h>
 
-void callback(tcp::Connection &connection, uint16_t event) {
+const size_t PACKET_SIZE = 8;
+
+void callback(tcp::Connection &connection, uint32_t &event) {
+    const std::string &buffer = connection.get_buffer();
+
     if (event & tcp::READ_EVENT) {
-        size_t bytes = connection.read();
-        connection.write(connection.get_buffer().data(), bytes);
-        connection.clear_buffer();
+        connection.read();
+        if (buffer.size() >= PACKET_SIZE)
+            event = tcp::WRITE_EVENT;
     } else  {
-        std::cout << "Write event came" << std::endl;
+        connection.write(buffer.data(), buffer.size());
+        connection.clear_buffer();
+        event = tcp::READ_EVENT;
     }
 }
 
