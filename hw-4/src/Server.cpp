@@ -13,8 +13,8 @@ namespace tcp {
 
     static const int g_default_max_connections = SOMAXCONN;
 
-    Server::Server(const std::string &ip, uint16_t port, Callback_t callback):
-                    callback_(std::move(callback)) {
+    Server::Server(const std::string &ip, uint16_t port, const Callback &callback):
+                    callback_(callback) {
         open(ip, port);
     }
 
@@ -27,7 +27,7 @@ namespace tcp {
     }
 
     void Server::open(const std::string &ip, uint16_t port) {
-        Process::Descriptor fd(::socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP));
+        Descriptor::Descriptor fd(::socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP));
         if (fd.data() == -1) {
             throw socket_error(std::string("Socket creation error: ") + std::strerror(errno));
         }
@@ -66,7 +66,7 @@ namespace tcp {
         manager.run();
     }
 
-    void Server::changeCallback(Callback_t callback) {
+    void Server::changeCallback(Callback callback) {
         callback_ = std::move(callback);
     }
 

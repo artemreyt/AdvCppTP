@@ -26,7 +26,7 @@ namespace tcp {
     }
 
     void Connection::connect(const std::string& ip, uint16_t port) {
-        Process::Descriptor fd(::socket(PF_INET, SOCK_STREAM, 0));
+        Descriptor::Descriptor fd(::socket(PF_INET, SOCK_STREAM, 0));
 
         if (fd.data() == -1) {
             throw socket_error(std::string("Socket creation error: ") + std::strerror(errno));

@@ -25,7 +25,7 @@ namespace tcp {
         void close();
 
     protected:
-        Process::Descriptor fd_;
+        Descriptor::Descriptor fd_;
     };
 }
 

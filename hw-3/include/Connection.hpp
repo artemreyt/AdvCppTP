@@ -39,7 +39,7 @@ namespace tcp {
     protected:
         Connection() = default;
 
-        Process::Descriptor fd_;
+        Descriptor::Descriptor fd_;
         std::string dst_addr_;
         std::string src_addr_;
         uint16_t src_port_;

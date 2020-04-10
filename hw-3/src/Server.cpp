@@ -16,6 +16,7 @@
 namespace tcp {
 
     static const int g_default_max_connections = 5;
+    using Descriptor::Descriptor;
 
     Server::Server(const std::string &ip, uint16_t port) {
         open(ip, port);
@@ -29,7 +30,7 @@ namespace tcp {
         Connection con;
         sockaddr_in client_addr {};
         socklen_t len = sizeof(client_addr);
-        Process::Descriptor connect_fd(::accept(fd_, reinterpret_cast<sockaddr *>(&client_addr), &len));
+        Descriptor connect_fd(::accept(fd_, reinterpret_cast<sockaddr *>(&client_addr), &len));
 
         if (connect_fd.data() == -1) {
             throw accept_error(std::string("Accept error: ") + std::strerror(errno));
@@ -46,7 +47,7 @@ namespace tcp {
     }
 
     void Server::open(const std::string &ip, uint16_t port) {
-        Process::Descriptor fd(::socket(PF_INET, SOCK_STREAM, 0));
+        Descriptor fd(::socket(PF_INET, SOCK_STREAM, 0));
         if (fd.data() == -1) {
             throw socket_error(std::string("Socket creation error: ") + std::strerror(errno));
         }

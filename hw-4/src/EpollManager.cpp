@@ -24,7 +24,7 @@ namespace tcp {
 
         epoll_event Event{};
         createEvent(&Event, &server_.masterSocket_, EPOLLIN);
-        addEvent(server.masterSocket_, &Event);
+        addEvent(server.masterSocket_, Event);
     }
 
     void Server::EpollManager::run() {
@@ -58,7 +58,7 @@ namespace tcp {
             Connection con;
             sockaddr_in client_addr{};
             socklen_t len = sizeof(client_addr);
-            Process::Descriptor connect_fd(::accept(server_.masterSocket_,
+            Descriptor::Descriptor connect_fd(::accept(server_.masterSocket_,
                     reinterpret_cast<sockaddr *>(&client_addr), &len));
 
             if (connect_fd == -1) {
@@ -108,15 +108,15 @@ namespace tcp {
 
         epoll_event Event {};
         createEvent(&Event, &slaveSockets_[fd], EPOLLIN);
-        addEvent(fd, &Event);
+        addEvent(fd, Event);
     }
 
     void Server::EpollManager::deleteConnection(Connection &connection) {
         slaveSockets_.erase(connection.fd_);
     }
 
-    void Server::EpollManager::addEvent(int fd, epoll_event *Event) {
-        if (::epoll_ctl(epollObject_, EPOLL_CTL_ADD, fd, Event) == -1) {
+    void Server::EpollManager::addEvent(int fd, epoll_event &Event) {
+        if (::epoll_ctl(epollObject_, EPOLL_CTL_ADD, fd, &Event) == -1) {
             throw epollAddError(std::string("Epoll add error: ")
                                 + std::strerror(errno));
         }

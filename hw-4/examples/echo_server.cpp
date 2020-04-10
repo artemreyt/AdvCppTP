@@ -34,10 +34,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    uint16_t port = get_port_safety(argv[1]);
+    uint16_t port = get_port_safety(argv[2]);
 
     try {
-        tcp::Server server("0.0.0.0", 8080, callback);
+        tcp::Server server("0.0.0.0", port, callback);
 
 
         while (true) {
@@ -69,11 +69,11 @@ uint16_t get_port_safety(char *val) {
     try {
         port = std::stoul(val);
     } catch (const std::exception &ex) {
-        std::cout << ex.what() << std::endl;
+        std::cout << "Bad port" << std::endl;
         exit(EXIT_FAILURE);
     }
     if (port > UINT16_MAX) {
-        std::cout << "port must be <= " << UINT16_MAX << std::endl;
+        std::cout << "Port must be <= " << UINT16_MAX << std::endl;
         exit(EXIT_FAILURE);
     }
     return static_cast<uint16_t>(port);

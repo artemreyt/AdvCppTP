@@ -1,7 +1,7 @@
 #ifndef DESCRIPTOR_HPP
 #define DESCRIPTOR_HPP
 
-namespace Process
+namespace Descriptor
 {
     class Descriptor
     {

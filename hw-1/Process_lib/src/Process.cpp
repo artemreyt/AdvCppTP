@@ -14,6 +14,8 @@
 #include "utils.hpp"
 #include <utility>
 
+using Descriptor::Descriptor;
+
 namespace Process
 {
     Process::Process(const std::string &path)
