@@ -43,7 +43,4 @@ int main() {
             }
         }
     }
-
-
-    std::cout << map[1] << std::endl;
 }

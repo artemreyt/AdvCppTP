@@ -27,6 +27,7 @@ namespace shmem {
         sem_t           *sem_;
 
     public:
+
         Map():
             state_(reinterpret_cast<AllocState*>(::mmap(nullptr,
                                                         MMAP_SIZE,
@@ -58,25 +59,44 @@ namespace shmem {
         }
 
         std::pair<typename MapType::iterator, bool> insert(const std::pair<const K, T>& pair_value) {
-            K key = utils::get_object_with_allocator_if_enable(pair_value.first, allocator_);
-            T value = utils::get_object_with_allocator_if_enable(pair_value.second, allocator_);
+            K key = utils::get_object_with_allocator_if_enable<K>(pair_value.first, allocator_);
+            T value = utils::get_object_with_allocator_if_enable<T>(pair_value.second, allocator_);
 
             SemLock lock(*sem_);
             return mapObject_->insert(std::move(std::make_pair<K, T>(std::move(key), std::move(value))));
         }
 
 
-        T& at( const K& key ) {
+        template <typename U>
+        std::enable_if_t<std::is_same_v<U, K>, T&>
+        at( const U& key ) {
             SemLock lock(*sem_);
             return mapObject_->at(key);
         }
 
-        const T& at( const K& key ) const {
+        template <typename U>
+        std::enable_if_t<!std::is_same_v<U, K>, T&>
+        at( const U& key ) {
+            return at(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        }
+
+        template <typename U>
+        std::enable_if_t<std::is_same_v<U, K>, const T&>
+        at( const U& key ) const {
             SemLock lock(*sem_);
             return mapObject_->at(key);
         }
 
-        T& operator[](const K& key) {
+        template <typename U>
+        std::enable_if_t<!std::is_same_v<U, K>, const T&>
+        at( const U& key ) const {
+            return at(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        }
+
+
+        template <typename U>
+        std::enable_if_t<std::is_same_v<U, K>, T&>
+        operator[](const U& key) {
             try {
                 return at(key);
             } catch (const std::out_of_range &ex) {
@@ -85,12 +105,23 @@ namespace shmem {
             }
         }
 
-        size_t erase(const K& key) {
+        template <typename U>
+        std::enable_if_t<!std::is_same_v<U, K>, T&>
+        operator[](const U& key) {
+            return operator[](utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        }
+
+        template <typename U>
+        std::enable_if_t<std::is_same_v<U, K>, size_t>
+        erase(const U& key) {
             SemLock lock(*sem_);
             return mapObject_->erase(key);
         }
-    };
 
-    template <class CharT>
-    using string = std::basic_string<CharT, std::char_traits<CharT>, Allocator<CharT>>;
+        template <typename U>
+        std::enable_if_t<!std::is_same_v<U, K>, size_t>
+        erase(const U& key) {
+            return erase(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        }
+    };
 }

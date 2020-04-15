@@ -57,6 +57,10 @@ namespace shmem
         if (reinterpret_cast<char *>(p) + sizeof(T) * n == state_->start)
             state_->start = reinterpret_cast<char *>(p);
     }
+
+
+    template <class CharT>
+    using string = std::basic_string<CharT, std::char_traits<CharT>, Allocator<CharT>>;
 }
 
 #endif
