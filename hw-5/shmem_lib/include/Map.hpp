@@ -58,15 +58,6 @@ namespace shmem {
             ::munmap(state_, MMAP_SIZE);
         }
 
-        std::pair<typename MapType::iterator, bool> insert(const std::pair<const K, T>& pair_value) {
-            K key = utils::get_object_with_allocator_if_enable<K>(pair_value.first, allocator_);
-            T value = utils::get_object_with_allocator_if_enable<T>(pair_value.second, allocator_);
-
-            SemLock lock(*sem_);
-            return mapObject_->insert(std::move(std::make_pair<K, T>(std::move(key), std::move(value))));
-        }
-
-
         template <typename U>
         std::enable_if_t<std::is_same_v<U, K>, T&>
         at( const U& key ) {
@@ -122,6 +113,12 @@ namespace shmem {
         std::enable_if_t<!std::is_same_v<U, K>, size_t>
         erase(const U& key) {
             return erase(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        }
+
+    private:
+        std::pair<typename MapType::iterator, bool> insert(const std::pair<const K, T>& pair_value) {
+            SemLock lock(*sem_);
+            return mapObject_->insert(pair_value);
         }
     };
 }
