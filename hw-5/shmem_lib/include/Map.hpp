@@ -58,61 +58,53 @@ namespace shmem {
             ::munmap(state_, MMAP_SIZE);
         }
 
-        template <typename U>
-        std::enable_if_t<std::is_same_v<U, K>, T&>
-        at( const U& key ) {
+        T& at( const K& key ) {
             SemLock lock(*sem_);
             return mapObject_->at(key);
         }
 
         template <typename U>
-        std::enable_if_t<!std::is_same_v<U, K>, T&>
-        at( const U& key ) {
-            return at(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        T& at( const U& key ) {
+            return at(utils::get_object_with_allocator<K>(key, allocator_));
         }
 
-        template <typename U>
-        std::enable_if_t<std::is_same_v<U, K>, const T&>
-        at( const U& key ) const {
+        const T& at( const K& key ) const {
             SemLock lock(*sem_);
             return mapObject_->at(key);
         }
 
         template <typename U>
-        std::enable_if_t<!std::is_same_v<U, K>, const T&>
-        at( const U& key ) const {
-            return at(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        const T& at( const U& key ) const {
+            return at(utils::get_object_with_allocator<K>(key, allocator_));
         }
 
 
-        template <typename U>
-        std::enable_if_t<std::is_same_v<U, K>, T&>
-        operator[](const U& key) {
+        T& operator[](const K& key) {
             try {
                 return at(key);
             } catch (const std::out_of_range &ex) {
-                insert(std::pair<const K, T>{key, utils::get_default_object_with_allocator<T>(allocator_)});
+                if constexpr (std::is_pod_v<T>) {
+                    return (*mapObject_)[key];
+                } else {
+                    insert(std::pair<const K, T>{key, utils::get_default_object_with_allocator<T>(allocator_)});
+                }
                 return at(key);
             }
         }
 
         template <typename U>
-        std::enable_if_t<!std::is_same_v<U, K>, T&>
-        operator[](const U& key) {
-            return operator[](utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        T& operator[](const U& key) {
+            return operator[](utils::get_object_with_allocator<K>(key, allocator_));
         }
 
-        template <typename U>
-        std::enable_if_t<std::is_same_v<U, K>, size_t>
-        erase(const U& key) {
+        size_t erase(const K& key) {
             SemLock lock(*sem_);
             return mapObject_->erase(key);
         }
 
         template <typename U>
-        std::enable_if_t<!std::is_same_v<U, K>, size_t>
-        erase(const U& key) {
-            return erase(utils::get_object_with_allocator_if_enable<K>(key, allocator_));
+        size_t erase(const U& key) {
+            return erase(utils::get_object_with_allocator<K>(key, allocator_));
         }
 
     private:
