@@ -14,7 +14,7 @@ using utils::SemLock;
 
 namespace shmem {
 
-    const size_t MMAP_SIZE = 8192;
+    const size_t MMAP_DEFAULT_SIZE = 8192;
 
     template <typename K, typename T>
     class Map {
@@ -28,9 +28,9 @@ namespace shmem {
 
     public:
 
-        Map():
+        Map(size_t mmap_size=MMAP_DEFAULT_SIZE):
             state_(reinterpret_cast<AllocState*>(::mmap(nullptr,
-                                                        MMAP_SIZE,
+                                                        mmap_size,
                                                         PROT_WRITE | PROT_READ,
                                                         MAP_SHARED | MAP_ANONYMOUS,
                                                         -1,
@@ -42,7 +42,7 @@ namespace shmem {
             }
 
             state_->start = reinterpret_cast<char *>(state_) + sizeof(*state_);
-            state_->end = reinterpret_cast<char *>(state_) + MMAP_SIZE;
+            state_->end = reinterpret_cast<char *>(state_) + mmap_size;
 
             sem_ = reinterpret_cast<sem_t *>(state_->start);
             ::sem_init(sem_, 1, 1);
@@ -55,7 +55,7 @@ namespace shmem {
         }
 
         ~Map() {
-            ::munmap(state_, MMAP_SIZE);
+            ::munmap(state_, MMAP_DEFAULT_SIZE);
         }
 
         T& at( const K& key ) {
@@ -77,8 +77,7 @@ namespace shmem {
         const T& at( const U& key ) const {
             return at(utils::get_object_with_allocator<K>(key, allocator_));
         }
-
-
+        
         T& operator[](const K& key) {
             try {
                 return at(key);
