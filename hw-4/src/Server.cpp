@@ -1,24 +1,20 @@
 #include "Server.hpp"
 #include "Errors.hpp"
 #include "Descriptor.hpp"
-#include "utils.hpp"
 #include <string>
 #include <cstdint>
 #include <cstring>
 #include <cerrno>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-#include <memory>
 
 namespace tcp {
 
-    static const int g_default_max_connections = 5;
-    using Descriptor::Descriptor;
+    static const int g_default_max_connections = SOMAXCONN;
 
-    Server::Server(const std::string &ip, uint16_t port) {
+    Server::Server(const std::string &ip, uint16_t port, const Callback &callback):
+                    callback_(callback) {
         open(ip, port);
     }
 
@@ -26,28 +22,12 @@ namespace tcp {
         close();
     }
 
-    Connection Server::accept() {
-        Connection con;
-        sockaddr_in client_addr {};
-        socklen_t len = sizeof(client_addr);
-        Descriptor connect_fd(::accept(fd_, reinterpret_cast<sockaddr *>(&client_addr), &len));
-
-        if (connect_fd.data() == -1) {
-            throw accept_error(std::string("Accept error: ") + std::strerror(errno));
-        }
-        get_binded_ip_port(connect_fd.data(), con.src_addr_, con.src_port_);
-        con.dst_addr_ = ::inet_ntoa(client_addr.sin_addr);
-        con.dst_port_ = ntohs(client_addr.sin_port);
-        con.fd_ = std::move(connect_fd);
-        return con;
-    }
-
     bool Server::is_opened() const {
-        return fd_.is_valid();
+        return masterSocket_.is_valid();
     }
 
     void Server::open(const std::string &ip, uint16_t port) {
-        Descriptor fd(::socket(PF_INET, SOCK_STREAM, 0));
+        Descriptor::Descriptor fd(::socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP));
         if (fd.data() == -1) {
             throw socket_error(std::string("Socket creation error: ") + std::strerror(errno));
         }
@@ -68,22 +48,32 @@ namespace tcp {
 
         if (::listen(fd.data(), g_default_max_connections) == -1) {
             throw socket_error("Listen error with max_connections = " +
-                               std::to_string(g_default_max_connections));
+                      std::to_string(g_default_max_connections));
         }
 
-        fd_ = std::move(fd);
+        masterSocket_ = std::move(fd);
     }
 
     void Server::set_max_connect(int max_connect) {
-        if (is_opened()) {
-            ::listen(fd_, max_connect);
+        if (::listen(masterSocket_, max_connect) == -1) {
+            throw socket_error("Listen error with max_connections = " +
+                      std::to_string(g_default_max_connections));
         }
+    }
+
+    void Server::eventLoop() {
+        EpollManager manager(*this);
+        manager.run();
+    }
+
+    void Server::changeCallback(Callback callback) {
+        callback_ = std::move(callback);
     }
 
     void Server::close() {
         if (is_opened()) {
-            ::shutdown(fd_, SHUT_RDWR);
-            fd_.close();
+            ::shutdown(masterSocket_, SHUT_RDWR);
+            masterSocket_.close();
         }
     }
 }

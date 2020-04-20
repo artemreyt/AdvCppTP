@@ -1,10 +1,8 @@
-#include "Process.hpp"
 #include "Descriptor.hpp"
-#include "ProcError.cpp"
 #include <unistd.h>
 #include <fcntl.h>
 
-namespace Process
+namespace Descriptor
 {
     Descriptor::Descriptor(int fd) :
             fd_{fd}
@@ -57,8 +55,8 @@ namespace Process
     {
         int retv;
 
-        if ((retv = ::dup2(fd_, fd)) == -1)
-            throw DupError();
+        retv = ::dup2(fd_, fd);
+//            throw DupError();
         return retv;
     }
 

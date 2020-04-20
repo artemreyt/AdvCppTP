@@ -7,6 +7,8 @@
 
 namespace Process
 {
+    using Descriptor::Descriptor;
+
     class Process
     {
     public:

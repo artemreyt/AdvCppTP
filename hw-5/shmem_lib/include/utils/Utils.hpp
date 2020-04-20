@@ -1,0 +1,26 @@
+#ifndef ADVCPPTP_UTILS_HPP
+#define ADVCPPTP_UTILS_HPP
+
+#include <type_traits>
+
+namespace utils {
+
+    template<typename RetType, typename U, typename Alloc>
+    RetType get_object_with_allocator(const U &obj, const Alloc &alloc)
+    {
+        static_assert(std::uses_allocator_v<RetType, Alloc>, "Not POD type should use Alloc");
+        static_assert(std::is_constructible_v<RetType, U, Alloc>, "RetType should be constructible from {U, Alloc}");
+
+        return RetType(obj, alloc);
+    }
+
+    template<typename U, typename Alloc>
+    U get_default_object_with_allocator(const Alloc &alloc)
+    {
+        static_assert(std::uses_allocator_v<U, Alloc>, "Not POD type should use Alloc");
+        static_assert(std::is_constructible_v<U, Alloc>, "U should be constructible from Alloc");
+
+        return U(alloc);
+    }
+}
+#endif //ADVCPPTP_UTILS_HPP
