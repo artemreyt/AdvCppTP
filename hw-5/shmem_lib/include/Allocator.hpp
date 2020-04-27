@@ -29,6 +29,11 @@ namespace shmem
             state_ = alloc.state_;
         }
 
+        template <typename U>
+        bool operator!=(const Allocator<U> &other) {
+            return state_ != other.state_;
+        }
+
         T *allocate(std::size_t n);
         void deallocate(T *p, std::size_t n);
 
