@@ -154,6 +154,7 @@ namespace HttpFramework {
         while (true) {
             HttpRequest request(connection);
             request.receive_request();
+            connection.clear_buffer();
 
             try {
                 HttpResponse response = server_.onRequest(request);
