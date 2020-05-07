@@ -5,8 +5,22 @@
 #include <utility>
 #include <string>
 #include <map>
+<<<<<<< HEAD
 
 namespace HttpFramework {
+=======
+
+namespace HttpFramework {
+
+    const std::string ENDLINE = "\r\n";
+
+    const std::map<uint16_t, std::string> g_status_info {
+            {200, "OK"},
+            {400, "Bad Request"},
+            {404, "Not Found"},
+            {500, "Internal Server Error"}
+    };
+>>>>>>> bd171608e2676b0e6c6613cbf18bae07f0594253
 
     class HttpResponse {
     public:

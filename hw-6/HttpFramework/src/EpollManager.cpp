@@ -150,6 +150,7 @@ namespace HttpFramework {
         while (true) {
             HttpRequest request(connection);
             request.receive_request();
+            connection.clear_buffer();
 
             HttpResponse response = server_.onRequest(request);
             changeEvent(connection, EPOLLOUT);
