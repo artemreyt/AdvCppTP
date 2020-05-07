@@ -12,6 +12,9 @@ namespace Descriptor
 
         Descriptor(Descriptor &&other) noexcept ;
 
+        // TODO !!!
+        Descriptor(const Descriptor &other) = default;
+
         Descriptor &operator=(Descriptor &&other) noexcept;
 
         Descriptor &operator=(const Descriptor &other) noexcept ;

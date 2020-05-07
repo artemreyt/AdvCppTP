@@ -1,19 +1,25 @@
 #include "Server.hpp"
 #include "Connection.hpp"
 #include "Descriptor.hpp"
+#include "Coroutine.hpp"
 #include "Errors.hpp"
+#include "HttpRequest.hpp"
 #include "utils.hpp"
 #include <cstring>
 #include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <functional>
+#include <tuple>
+#include <stdexcept>
 
 
 
 namespace HttpFramework {
     static const size_t MAX_EVENTS = 1000;
     static const size_t MAX_ACCEPTIONS = 1;
+    static const uint32_t MASTER_SOCKET_EVENTS = EPOLLIN | EPOLLEXCLUSIVE;
 
     Server::EpollManager::EpollManager(Server &server) :
             server_(server), epollObject_(epoll_create(1)) {
@@ -24,8 +30,12 @@ namespace HttpFramework {
         }
 
         epoll_event Event{};
-        createEvent(&Event, &server_.masterSocket_, EPOLLIN | EPOLLEXCLUSIVE);
+        createEvent(&Event, &server_.masterSocket_, MASTER_SOCKET_EVENTS);
         addEvent(server.masterSocket_, Event);
+    }
+
+    void Server::EpollManager::operator()() {
+        run();
     }
 
     void Server::EpollManager::run() {
@@ -44,10 +54,8 @@ namespace HttpFramework {
                 if (ptr == &server_.masterSocket_) {
                     acceptClients();
                 } else {
-                    auto id = Events[i].data;
-                    Connection &connection = *(static_cast<Connection *>(ptr));
-                    uint32_t event = Events[i].events;
-                    handleClient(connection, event);
+//                    auto id = Events[i].data.u64;
+                    handleClient(Events[i]);
                 }
             }
         }
@@ -68,7 +76,7 @@ namespace HttpFramework {
                 else if (errno == EAGAIN || errno == EWOULDBLOCK)
                     return;
                 else
-                    throw accept_error(std::string("Accept failed: ") + std::strerror(errno));
+                   ; // TODO: logging - acception failed
             }
 
             if (set_nonblock(connect_fd) == -1) {
@@ -84,42 +92,44 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::handleClient(Connection &connection, uint32_t &event) {
-        char buf;
+    void Server::EpollManager::handleClient(const epoll_event &event) {
+        auto id = event.data.u64;
 
-        if (event & EPOLLERR || event & EPOLLHUP) {
-            deleteConnection(connection);
-        } else {
-            uint16_t old_event = event;
-            try {
-                server_.callback_(connection, event);
-            } catch (...) {
-                deleteConnection(connection);
-            }
-            if (!connection.is_opened()) {
-                deleteConnection(connection);
-            } else if (old_event != event) {
-                changeEvent(connection, event);
-            }
+        if (event.events & EPOLLERR || event.events & EPOLLHUP) {
+            deleteConnection(id);
+            return;
+        }
+
+        try {
+            Coroutine::resume(id);
+        } catch (...) {
+            // TODO: logging
+            deleteConnection(id);
         }
     }
 
     void Server::EpollManager::addNewConnection(Connection &&connection) {
-        slaveSockets_[connection.fd_] = std::move(connection);
-        Coroutine::routine_t id = Coroutine::create(connection.fd_,
-                &Server::EpollManager::clientRoutine, *this, slaveSockets_[connection.fd_]);
+        int id = connection.fd_;
 
-        epoll_event Event {
-            .data.u64 = id,
-            .events = EPOLLIN
-        };
+        connectionsMap.emplace(connection.fd_, std::move(connection));
+        Coroutine::create(
+                id,
+                &Server::EpollManager::clientRoutine,
+                std::ref(*this)
+                );
 
-        addEvent(fd, Event);
+        epoll_event Event {};
+        Event.data.u32 = id;
+        Event.events = EPOLLIN;
+
+        addEvent(id, Event);
     }
 
-    void Server::EpollManager::deleteConnection(Connection &connection) {
-        slaveSockets_.erase(connection.fd_);
+    void Server::EpollManager::deleteConnection(Coroutine::routine_t id) {
+        connectionsMap.erase(id);
+        Coroutine::finish(id);
     }
+
 
     void Server::EpollManager::addEvent(int fd, epoll_event &Event) {
         if (::epoll_ctl(epollObject_, EPOLL_CTL_ADD, fd, &Event) == -1) {
@@ -136,5 +146,27 @@ namespace HttpFramework {
             throw epoll_error(std::string("Epoll mod error: ")
                                 + std::strerror(errno));
         }
+    }
+
+    void Server::EpollManager::clientRoutine() {
+        auto &connection = connectionsMap.at(Coroutine::current());
+
+        while (true) {
+            HttpRequest request(connection);
+            request.receive_request();
+
+            try {
+                HttpResponse response = server_.onRequest(request);
+                changeEvent(connection, EPOLLOUT);
+                response.send(connection);
+            } catch (...) {
+                throw; // TODO
+            }
+
+            if (request.get_headers().at("Connection") != "Keep-Alive") {
+                break;
+            }
+        }
+        connectionsMap.erase(connection.fd_);
     }
 }

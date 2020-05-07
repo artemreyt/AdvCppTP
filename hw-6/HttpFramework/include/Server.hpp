@@ -9,7 +9,7 @@
 #include <string>
 #include <cstdint>
 #include <memory>
-#include <unordered_map>
+#include <map>
 #include <functional>
 #include <sys/epoll.h>
 #include <thread>
@@ -31,24 +31,27 @@ namespace HttpFramework {
     protected:
         Descriptor::Descriptor masterSocket_;
 
-        class EpollManager : public std::allocator_arg_t {
+    public:
+        class EpollManager {
         public:
             explicit EpollManager(Server &server);
+            EpollManager(EpollManager &&other) = default;
+            EpollManager(const EpollManager &other) = delete;
             void run();
             void operator()();
 
         private:
             void addNewConnection(Connection &&connection);
-            void deleteConnection(Connection &connection);
+            void deleteConnection(Coroutine::routine_t id);
             void addEvent(int fd, epoll_event &Event);
             void changeEvent(Connection &connection, uint32_t new_event);
             void acceptClients();
-            void handleClient(Connection &connection, uint32_t &event);
-            void clientRoutine(Connection &connection);
+            void handleClient(const epoll_event &event);
+            void clientRoutine();
 
             Descriptor::Descriptor epollObject_;
+            std::map<int, Connection> connectionsMap;
             Server &server_;
-            std::unordered_map<Coroutine::routine_t, Connection> slaveSockets_;
         };
     };
 }

@@ -13,6 +13,7 @@ using RoutineFunction = std::function<void()>;
 
 routine_t create(routine_t id, const RoutineFunction& function);
 bool resume(routine_t id);
+bool finish(routine_t id);
 void yield();
 routine_t current();
 

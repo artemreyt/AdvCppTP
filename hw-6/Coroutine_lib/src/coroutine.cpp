@@ -115,6 +115,22 @@ routine_t current()
 	return ordinator.current;
 }
 
+bool finish(routine_t id) {
+    auto &o = ordinator;
+
+    try {
+        auto &routine = o.routines.at(id);
+
+        routine.finished = true;
+        o.current = 0;
+        o.finished.emplace(o.routines.extract(id));
+    } catch (std::out_of_range&) {
+        return false;
+    }
+    return true;
+}
+
+
 namespace
 {
 
@@ -132,10 +148,7 @@ void entry()
 	{
 		routine.exception = std::current_exception();
 	}
-
-	routine.finished = true;
-	o.current = 0;
-	o.finished.emplace(o.routines.extract(id));
+	finish(id);
 }
 
 }

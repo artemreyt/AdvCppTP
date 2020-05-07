@@ -71,37 +71,13 @@ namespace HttpFramework {
         std::string buffer(size + 1, '\0');
         ssize_t bytes = ::recv(fd_, buffer.data(), size, MSG_NOSIGNAL);
 
-        if (bytes == -1)
+        if (bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            return 0;
+        else if (bytes == -1)
             throw socket_error(std::string("Read error:") + std::strerror(errno));
         buffer.resize(bytes);
         buffer_ += buffer;
         return static_cast<size_t>(bytes);
-    }
-
-    void Connection::writeExact(const void *data, size_t len) {
-        size_t written = 0;
-        while (written < len)
-        {
-            ssize_t bytes = write(static_cast<const char *>(data) + written, len - written);
-            if (bytes <= 0) {
-                close();
-                throw socket_error(std::string("writeExact error: ") + std::strerror(errno));
-            }
-            written += bytes;
-        }
-    }
-
-    void Connection::readExact(size_t len) {
-        size_t was_read = 0;
-        while (was_read < len)
-        {
-            ssize_t bytes = read(len - was_read);
-            if (bytes <= 0) {
-                close();
-                throw socket_error(std::string("readExact error: ") + std::strerror(errno));
-            }
-            was_read += bytes;
-        }
     }
 
     void Connection::close() {

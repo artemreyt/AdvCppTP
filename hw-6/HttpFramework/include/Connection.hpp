@@ -25,9 +25,6 @@ namespace HttpFramework {
         size_t write(const void *data, size_t size);
         size_t read(size_t size=-1);
 
-        void writeExact(const void *data, size_t size);
-        void readExact(size_t size);
-
         void close();
         void set_timeout(int sec);
 
@@ -46,6 +43,7 @@ namespace HttpFramework {
         std::string src_addr_;
         uint16_t src_port_{};
         uint16_t dst_port_{};
+        uint32_t last_events;
         std::string buffer_;
     };
 }

@@ -37,16 +37,39 @@ namespace HttpFramework {
         return ioctl(fd, FIOBIO, &flags);
     #endif
     }
-}
 
-size_t
-std::hash<tcp::Connection>::operator()(const tcp::Connection &connection) const {
-    size_t h1 = std::hash<std::string>()(connection.get_dst_ip());
+    std::string& lstrip(std::string &str) {
+        str.erase(0, str.find_first_not_of(" \n\r\t"));
+        return str;
+    }
 
-    /* if port will change type */
-    size_t h2 = std::hash<std::remove_const_t<
-                    std::remove_reference_t<decltype(connection.get_dst_port())>
-                    >>()(connection.get_dst_port());
-    return h1 ^ (h2 << 1);
+    std::string decode_url(const std::string &url) {
+        std::string res_str;
+
+        const char *c_str = url.c_str();
+        while (*c_str) {
+            if (*c_str == '%' && c_str[1] && c_str[2]) {
+                res_str += std::strtoul(std::string(c_str + 1, 2).c_str(), nullptr, 16);
+                c_str += 3;
+            } else {
+                res_str += *c_str;
+                c_str++;
+            }
+        }
+        return res_str;
+    }
+
+    void parse_query_string(const std::string &query_string, std::map<std::string, std::string> &params) {
+        std::string decode_query = decode_url(query_string);
+
+        size_t start = 0;
+        while (start != std::string::npos) {
+            size_t delim_pos = decode_query.find('=');
+            auto key = decode_query.substr(start, delim_pos);
+            start = decode_query.find('&');
+            auto value = decode_query.substr(delim_pos, start);
+            params.emplace(std::move(key), std::move(value));
+        }
+    }
 }
 
