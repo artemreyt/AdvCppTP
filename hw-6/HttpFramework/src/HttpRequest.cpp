@@ -29,7 +29,7 @@ namespace HttpFramework {
         } else if (method_ == "GET") {
             read_get();
         } else {
-            throw ;// TODO
+            throw httpNotImplemented("");// TODO
         }
     }
 

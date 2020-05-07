@@ -14,8 +14,6 @@
 #include <tuple>
 #include <stdexcept>
 
-
-
 namespace HttpFramework {
     static const size_t MAX_EVENTS = 1000;
     static const size_t MAX_ACCEPTIONS = 1;
@@ -54,7 +52,6 @@ namespace HttpFramework {
                 if (ptr == &server_.masterSocket_) {
                     acceptClients();
                 } else {
-//                    auto id = Events[i].data.u64;
                     handleClient(Events[i]);
                 }
             }
@@ -75,8 +72,7 @@ namespace HttpFramework {
                 if (errno == EINTR) continue;
                 else if (errno == EAGAIN || errno == EWOULDBLOCK)
                     return;
-                else
-                   ; // TODO: logging - acception failed
+                throw accept_error();
             }
 
             if (set_nonblock(connect_fd) == -1) {
@@ -155,15 +151,12 @@ namespace HttpFramework {
             HttpRequest request(connection);
             request.receive_request();
 
-            try {
-                HttpResponse response = server_.onRequest(request);
-                changeEvent(connection, EPOLLOUT);
-                response.send(connection);
-            } catch (...) {
-                throw; // TODO
-            }
+            HttpResponse response = server_.onRequest(request);
+            changeEvent(connection, EPOLLOUT);
+            response.send(connection);
 
             if (request.get_headers().at("Connection") != "Keep-Alive") {
+                changeEvent(connection, EPOLLIN);
                 break;
             }
         }

@@ -1,5 +1,5 @@
-#ifndef TCP_UTILS_HPP
-#define TCP_UTILS_HPP
+#ifndef HTTP_UTILS_HPP
+#define HTTP_UTILS_HPP
 
 #include "Connection.hpp"
 #include <string>
@@ -19,17 +19,4 @@ namespace HttpFramework {
                                        std::map<std::string, std::string> &params);
 }
 
-/*
- * In order to store tcp::Connection
- * in std::unordered_set
- */
-namespace std {
-    template <>
-    struct hash<tcp::Connection> {
-        size_t operator()(const tcp::Connection &connection) const ;
-    };
-}
-
-
-
-#endif //TCP_UTILS_HPP
+#endif //HTTP_UTILS_HPP
