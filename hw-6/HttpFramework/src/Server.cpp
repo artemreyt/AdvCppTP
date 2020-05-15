@@ -1,8 +1,7 @@
 #include "Server.hpp"
 #include "Errors.hpp"
 #include "Descriptor.hpp"
-#include "HttpRequest.hpp"
-#include "HttpResponse.hpp"
+#include "Logger.hpp"
 #include <string>
 #include <cstdint>
 #include <cstring>
@@ -17,7 +16,8 @@ namespace HttpFramework {
     static const int    g_default_max_connections = SOMAXCONN;
     static const size_t g_max_threads = 16;
 
-    Server::Server(const std::string &ip, uint16_t port) {
+    Server::Server(const std::string &ip, uint16_t port, Logger::BaseLogger &logger):
+        logger_(logger){
         open(ip, port);
     }
 
@@ -32,7 +32,7 @@ namespace HttpFramework {
     void Server::open(const std::string &ip, uint16_t port) {
         Descriptor::Descriptor fd(::socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP));
         if (fd.data() == -1) {
-            throw socket_error(std::string("Socket creation error: ") + std::strerror(errno));
+            throw socket_creation_error(std::string("Socket creation error: ") + std::strerror(errno));
         }
 
         sockaddr_in addr {};
@@ -43,11 +43,11 @@ namespace HttpFramework {
         addr.sin_port = htons(port);
 
         if (::bind(fd.data(), reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == -1) {
-            throw socket_error(std::string("Bind error: ") + std::strerror(errno));
+            throw tcp_error(std::string("Bind error: ") + std::strerror(errno));
         }
 
         if (::listen(fd.data(), g_default_max_connections) == -1) {
-            throw socket_error("Listen error with max_connections = " +
+            throw tcp_error("Listen error with max_connections = " +
                       std::to_string(g_default_max_connections));
         }
 
@@ -56,7 +56,7 @@ namespace HttpFramework {
 
     void Server::set_max_connect(int max_connect) {
         if (::listen(masterSocket_, max_connect) == -1) {
-            throw socket_error("Listen error with max_connections = " +
+            throw tcp_error("Listen error with max_connections = " +
                       std::to_string(g_default_max_connections));
         }
     }

@@ -5,7 +5,6 @@
 
 namespace HttpFramework {
 
-<<<<<<< HEAD
     const std::string ENDLINE = "\r\n";
 
     const std::map<uint16_t, std::string> g_status_info {
@@ -15,8 +14,6 @@ namespace HttpFramework {
             {500, "Internal Server Error"},
             {501, "Not Implemented"}
     };
-=======
->>>>>>> bd171608e2676b0e6c6613cbf18bae07f0594253
 
     HttpResponse::HttpResponse(const std::string &version, uint16_t status_code):
                 version_(version), status_code_(status_code) {}

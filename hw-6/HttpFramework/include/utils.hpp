@@ -17,6 +17,7 @@ namespace HttpFramework {
     std::string     decode_url(const std::string &url);
     void            parse_query_string(const std::string &url,
                                        std::map<std::string, std::string> &params);
+    std::string     string_thread_id();
 }
 
 #endif //HTTP_UTILS_HPP

@@ -6,6 +6,8 @@
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
+#include <sstream>
+#include <thread>
 
 
 namespace HttpFramework {
@@ -15,7 +17,7 @@ namespace HttpFramework {
 
         int retv = getsockname(fd, reinterpret_cast<sockaddr *>(&addr), &len);
         if (retv == -1) {
-            throw socket_error(std::string("Fail to get socket data: ") + std::strerror(errno));
+            throw tcp_error(std::string("Fail to get socket data: ") + std::strerror(errno));
         }
         ip = ::inet_ntoa(addr.sin_addr);
         port = ntohs(addr.sin_port);
@@ -70,6 +72,13 @@ namespace HttpFramework {
             auto value = decode_query.substr(delim_pos, start);
             params.emplace(std::move(key), std::move(value));
         }
+    }
+
+    std::string string_thread_id() {
+        auto myid = std::this_thread::get_id();
+        std::stringstream ss;
+        ss << myid;
+        return ss.str();
     }
 }
 

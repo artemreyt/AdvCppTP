@@ -1,5 +1,6 @@
 #include "HttpRequest.hpp"
 #include "Coroutine.hpp"
+#include "Errors.hpp"
 #include "utils.hpp"
 #include <sstream>
 
@@ -29,7 +30,7 @@ namespace HttpFramework {
         } else if (method_ == "GET") {
             read_get();
         } else {
-            throw httpNotImplemented("");// TODO
+            throw httpNotImplemented("Only GET and POST methods are available");
         }
     }
 

@@ -6,6 +6,7 @@
 #include "Coroutine.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
+#include "Logger.hpp"
 #include <string>
 #include <cstdint>
 #include <memory>
@@ -18,7 +19,7 @@ namespace HttpFramework {
 
     class Server {
     public:
-        Server(const std::string &ip, uint16_t port);
+        Server(const std::string &ip, uint16_t port, Logger::BaseLogger &logger);
         ~Server() noexcept;
 
         void run(size_t number_threads=std::thread::hardware_concurrency());
@@ -30,6 +31,8 @@ namespace HttpFramework {
 
     protected:
         Descriptor::Descriptor masterSocket_;
+        Logger::BaseLogger &logger_;
+
 
     public:
         class EpollManager {

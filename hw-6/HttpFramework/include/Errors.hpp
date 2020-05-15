@@ -1,5 +1,5 @@
 #ifndef HTTP_ERRORS_HPP
-#define HTTPP_ERRORS_HPP
+#define HTTP_ERRORS_HPP
 
 #include <stdexcept>
 #include <string>
@@ -15,17 +15,28 @@ namespace HttpFramework {
         std::string msg_;
     };
 
+    /*------------Base Errors--------------*/
+
     class tcp_error: public error {
+    public:
         explicit tcp_error(std::string msg="Tcp error");
     };
 
     class http_error : public error {
+    public:
         explicit http_error(std::string msg="Http error");
     };
 
-    class socket_error: public tcp_error {
+    class epoll_error : public error {
     public:
-        explicit socket_error(std::string msg="Socket error");
+        explicit epoll_error(std::string msg="epoll error");
+    };
+
+    /*------------Tcp Errors----------------*/
+
+    class socket_creation_error: public tcp_error {
+    public:
+        explicit socket_creation_error(std::string="Socket creation error");
     };
 
     class bad_ip_address: public tcp_error {
@@ -47,24 +58,23 @@ namespace HttpFramework {
         explicit accept_error(std::string msg="Accept error");
     };
 
-    class epoll_error : public tcp_error {
-    public:
-        explicit epoll_error(std::string msg="epoll error");
-    };
+    /*-------------Epoll Errors----------------*/
 
     class epollAddError: public epoll_error {
     public:
         explicit epollAddError(std::string msg="Epoll add error");
     };
 
+    /*-------------Http Errors------------------*/
+
     class httpNotImplemented: public http_error {
     public:
-        explicit httpNotImplemented();
+        explicit httpNotImplemented(std::string msg="501 Not Implemented");
     };
 
-    class badRequest: public http_error {
+    class httpBadRequest: public http_error {
     public:
-        explicit badRequest();
+        explicit httpBadRequest(std::string msg="400 Bad Request");
     };
 }
 

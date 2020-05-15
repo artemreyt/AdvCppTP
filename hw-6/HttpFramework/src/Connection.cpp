@@ -29,7 +29,7 @@ namespace HttpFramework {
         Descriptor::Descriptor fd(::socket(PF_INET, SOCK_STREAM, 0));
 
         if (fd.data() == -1) {
-            throw socket_error(std::string("Socket creation error: ") + std::strerror(errno));
+            throw socket_creation_error(std::string("Socket creation error: ") + std::strerror(errno));
         }
 
         sockaddr_in addr {};
@@ -62,7 +62,7 @@ namespace HttpFramework {
         if (bytes == -1 && errno == EINTR)
             return write(data, size);
         if (bytes == -1)
-            throw socket_error("Error to write");
+            throw tcp_error("Error to write");
         return static_cast<size_t>(bytes);
     }
 
@@ -74,7 +74,7 @@ namespace HttpFramework {
         if (bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
             return 0;
         else if (bytes == -1)
-            throw socket_error(std::string("Read error:") + std::strerror(errno));
+            throw tcp_error(std::string("Read error:") + std::strerror(errno));
         buffer.resize(bytes);
         buffer_ += buffer;
         return static_cast<size_t>(bytes);
@@ -89,7 +89,7 @@ namespace HttpFramework {
     void Connection::set_timeout(int sec) {
         timeval timeout {.tv_sec = sec, .tv_usec = 0};
         if (setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO | SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
-            throw socket_error(std::string("Set timeout error:") + std::strerror(errno));
+            throw tcp_error(std::string("Set timeout error:") + std::strerror(errno));
         }
     }
 
