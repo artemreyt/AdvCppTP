@@ -1,0 +1,2 @@
+add_executable(example_server example.cpp)
+target_link_libraries(example_server HttpFramework)

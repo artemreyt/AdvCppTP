@@ -39,7 +39,7 @@ namespace HttpFramework {
         std::istringstream stream(buffer.substr(0, end ? end: std::string::npos));
 
         stream >> method_ >> path_ >> version_;
-        version_ = version_.substr(version_.find('/'));
+        version_ = version_.substr(version_.find('/') + 1);
         stream.ignore(2);
 
         while (!stream.eof()) {
@@ -83,27 +83,27 @@ namespace HttpFramework {
 
     /*-------------------Getters--------------------------*/
 
-    const HttpRequest::headers_type  &HttpRequest::get_headers() {
+    const HttpRequest::headers_type  &HttpRequest::get_headers() const {
         return headers_;
     }
 
-    const HttpRequest::headers_type  &HttpRequest::get_params() {
+    const HttpRequest::headers_type  &HttpRequest::get_params() const {
         return params_;
     }
 
-    const std::string &HttpRequest::get_method() {
+    const std::string &HttpRequest::get_method() const {
         return method_;
     }
 
-    const std::string &HttpRequest::get_path() {
+    const std::string &HttpRequest::get_path() const {
         return path_;
     }
 
-    const std::string &HttpRequest::get_version() {
+    const std::string &HttpRequest::get_version() const {
         return version_;
     }
 
-    const std::string &HttpRequest::get_body() {
+    const std::string &HttpRequest::get_body() const {
         return body_;
     }
 }

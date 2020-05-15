@@ -10,5 +10,7 @@ add_library(HttpFramework
             src/HttpRequest.cpp
             src/HttpResponse.cpp)
 target_include_directories(HttpFramework PUBLIC include)
-target_link_libraries(HttpFramework PRIVATE pthread coroutine Descriptor Logger)
-target_compile_features(HttpFramework PRIVATE cxx_std_17)
+target_link_libraries(HttpFramework PUBLIC pthread coroutine Descriptor Logger)
+target_compile_features(HttpFramework PUBLIC cxx_std_17)
+
+add_subdirectory(example)

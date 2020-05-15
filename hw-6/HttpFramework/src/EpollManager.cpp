@@ -86,7 +86,7 @@ namespace HttpFramework {
 
             server_.logger_.info("New connection from "s + con.dst_addr_ + ":" +
                     std::to_string(con.dst_port_) + " accepted by thread ["
-                    + string_thread_id());
+                    + string_thread_id() + "]");
 
             addNewConnection(std::move(con));
         }
@@ -104,21 +104,18 @@ namespace HttpFramework {
             Coroutine::resume(id);
         } catch (tcp_error &err) {
             server_.logger_.warn(err.what());
-            deleteConnection(id);
         } catch (http_error &err) {
             server_.logger_.warn(err.what());
             // TODO: send response to client with certain status_code
-            deleteConnection(id);
         } catch (epoll_error &err) {
             server_.logger_.error(err.what());
             throw;
         } catch (std::exception &err) {
             server_.logger_.warn(std::string("User error: ") + err.what());
-            deleteConnection(id);
         } catch (...) {
             server_.logger_.warn("Unknown user error");
-            deleteConnection(id);
         }
+        deleteConnection(id);
     }
 
     void Server::EpollManager::addNewConnection(Connection &&connection) {
@@ -141,10 +138,9 @@ namespace HttpFramework {
     void Server::EpollManager::deleteConnection(Coroutine::routine_t id) {
         const auto &con = connectionsMap.at(id);
 
-        server_.logger_.info("Disconnect with "s + con.dst_addr_ + ":" + std::to_string(con.dst_port_));
-
         connectionsMap.erase(id);
         Coroutine::finish(id);
+        server_.logger_.info("Disconnect with "s + con.dst_addr_ + ":" + std::to_string(con.dst_port_));
     }
 
 
@@ -175,13 +171,18 @@ namespace HttpFramework {
 
             HttpResponse response = server_.onRequest(request);
             changeEvent(connection, EPOLLOUT);
-            response.send(connection);
 
-            if (request.get_headers().at("Connection") != "Keep-Alive") {
+            response.send(connection);
+            server_.logger_.debug("Sent packet to "s + connection.get_dst_ip() + ":"
+                                    + std::to_string(connection.get_dst_port()));
+
+            if (request.get_headers().count("Connection")
+                && request.get_headers().at("Connection") == "Keep-Alive") {
                 changeEvent(connection, EPOLLIN);
+                Coroutine::yield();
+            } else {
                 break;
             }
         }
-        connectionsMap.erase(connection.fd_);
     }
 }

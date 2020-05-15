@@ -38,7 +38,7 @@ namespace HttpFramework {
             msg += (header_name + ": ").append(value).append(ENDLINE);
         }
 
-        msg += ENDLINE + ENDLINE + body_;
+        msg += ENDLINE + body_ + ENDLINE + ENDLINE;
 
         size_t sended = 0;
         while ( true ) {

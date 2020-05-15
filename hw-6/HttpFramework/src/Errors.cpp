@@ -30,4 +30,5 @@ namespace HttpFramework {
 
     httpBadRequest::httpBadRequest(std::string msg): http_error(std::move(msg)) {}
 
+    http_error::http_error(std::string msg) : error(std::move(msg)) {}
 }

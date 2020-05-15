@@ -16,12 +16,12 @@ namespace HttpFramework {
         void        read_get();
         void        read_post(size_t start);
 
-        const headers_type &get_headers();
-        const headers_type &get_params();
-        const std::string  &get_method();
-        const std::string  &get_path();
-        const std::string  &get_version();
-        const std::string  &get_body();
+        const headers_type &get_headers() const;
+        const headers_type &get_params() const;
+        const std::string  &get_method() const;
+        const std::string  &get_path() const;
+        const std::string  &get_version() const;
+        const std::string  &get_body() const;
 
     private:
 
