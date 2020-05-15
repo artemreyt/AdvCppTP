@@ -3,9 +3,9 @@
 #include <sstream>
 #include <ctime>
 #include <iostream>
-#include <fstream>
 #include <string_view>
 #include <map>
+#include <mutex>
 
 namespace Logger
 {
@@ -82,6 +82,7 @@ namespace Logger
 
         try
         {
+            std::lock_guard<std::mutex> lock(log_mutex_);
             *stream_ << note.str() << std::endl;
         } catch (std::ios_base::failure&)
         {

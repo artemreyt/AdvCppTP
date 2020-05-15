@@ -139,7 +139,6 @@ namespace HttpFramework {
         const auto &con = connectionsMap.at(id);
 
         connectionsMap.erase(id);
-        Coroutine::finish(id);
         server_.logger_.info("Disconnect with "s + con.dst_addr_ + ":" + std::to_string(con.dst_port_));
     }
 

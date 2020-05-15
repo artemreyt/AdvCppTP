@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
+#include <mutex>
 
 namespace Logger
 {
@@ -37,6 +38,7 @@ namespace Logger
     protected:
         t_level level_;
         std::ostream *stream_;
+        std::mutex log_mutex_;
 
     private:
         virtual void log(const std::string &msg, t_level level);

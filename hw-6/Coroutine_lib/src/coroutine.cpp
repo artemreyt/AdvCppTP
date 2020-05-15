@@ -148,6 +148,7 @@ void entry()
 	{
 		routine.exception = std::current_exception();
 	}
+
 	finish(id);
 }
 
