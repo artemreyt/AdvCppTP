@@ -7,7 +7,7 @@
 namespace Coroutine
 {
 
-using routine_t = uint64_t ;
+using routine_t = uint32_t ;
 using stack_t = std::unique_ptr<uint8_t[]>;
 using RoutineFunction = std::function<void()>;
 

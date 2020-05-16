@@ -49,7 +49,7 @@ namespace HttpFramework {
             }
 
             for (int i = 0; i < nfds; ++i) {
-                int id = Events[i].data.u32;
+                int id = Events[i].data.u32 ;
 
                 server_.logger_.debug("id of Event: " + std::to_string(id));
 
@@ -167,7 +167,8 @@ namespace HttpFramework {
 
     void Server::EpollManager::changeEvent(Connection &connection, uint32_t new_event) {
         epoll_event Event{};
-        createEvent(&Event, &connection, new_event);
+        Event.data.u32 = connection.fd_;
+        Event.events = new_event;
 
         if (::epoll_ctl(epollObject_, EPOLL_CTL_MOD, connection.fd_, &Event) == -1) {
             throw epoll_error(std::string("Epoll mod error: ")
