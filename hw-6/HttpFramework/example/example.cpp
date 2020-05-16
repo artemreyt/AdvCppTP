@@ -7,7 +7,6 @@
 const std::string ip = "0.0.0.0";
 const uint16_t port = 8000;
 const std::string log_file = "log.txt";
-//Logger::FileLogger file_logger(log_file, Logger::t_level::DEBUG);
 Logger::StdoutLogger stdout_logger(Logger::t_level::DEBUG);
 
 class MyServer: public HttpFramework::Server {
@@ -34,7 +33,6 @@ public:
 };
 
 int main() {
-    stdout_logger.debug("Nu i epta");
     MyServer server;
     server.run();
 }

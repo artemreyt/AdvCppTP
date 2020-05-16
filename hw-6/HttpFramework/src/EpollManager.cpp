@@ -28,7 +28,8 @@ namespace HttpFramework {
         }
 
         epoll_event Event{};
-        createEvent(&Event, &server_.masterSocket_, MASTER_SOCKET_EVENTS);
+        Event.data.u32 = server.masterSocket_;
+        Event.events = MASTER_SOCKET_EVENTS;
         addEvent(server.masterSocket_, Event);
     }
 
@@ -41,15 +42,18 @@ namespace HttpFramework {
             static epoll_event Events[MAX_EVENTS];
 
             int nfds = ::epoll_wait(epollObject_, Events, MAX_EVENTS, -1);
+            server_.logger_.debug("Woke up with "s + std::to_string(nfds) + " events");
             if (nfds < 0) {
                 if (errno == EINTR) continue;
                 throw epoll_error(std::string("epoll_wait error: ") + std::strerror(errno));
             }
 
             for (int i = 0; i < nfds; ++i) {
-                auto ptr = Events[i].data.ptr;
+                int id = Events[i].data.u32;
 
-                if (ptr == &server_.masterSocket_) {
+                server_.logger_.debug("id of Event: " + std::to_string(id));
+
+                if (id == server_.masterSocket_) {
                     acceptClients();
                 } else {
                     handleClient(Events[i]);
@@ -85,15 +89,15 @@ namespace HttpFramework {
             con.fd_ = std::move(connect_fd);
 
             server_.logger_.info("New connection from "s + con.dst_addr_ + ":" +
-                    std::to_string(con.dst_port_) + " accepted by thread ["
-                    + string_thread_id() + "]");
+                    std::to_string(con.dst_port_) + " accepted "
+                    + "[fd=" + std::to_string(int(con.fd_)) + "]");
 
             addNewConnection(std::move(con));
         }
     }
 
     void Server::EpollManager::handleClient(const epoll_event &event) {
-        auto id = event.data.u64;
+        int id = event.data.u32;
 
         if (event.events & EPOLLERR || event.events & EPOLLHUP) {
             deleteConnection(id);
@@ -111,17 +115,23 @@ namespace HttpFramework {
             server_.logger_.error(err.what());
             throw;
         } catch (std::exception &err) {
-            server_.logger_.warn(std::string("User error: ") + err.what());
+            server_.logger_.warn("User error[id="s + std::to_string(id) + "]: " + err.what());
         } catch (...) {
             server_.logger_.warn("Unknown user error");
         }
-        deleteConnection(id);
+
+        try {
+            deleteConnection(id);
+        } catch (std::out_of_range &err) {
+            server_.logger_.error("deleteConnection Error[id=" + std::to_string(id) + "]: " + err.what());
+//            throw;
+        }
     }
 
     void Server::EpollManager::addNewConnection(Connection &&connection) {
         int id = connection.fd_;
 
-        connectionsMap.emplace(connection.fd_, std::move(connection));
+        connectionsMap.emplace(id, std::move(connection));
         Coroutine::create(
                 id,
                 &Server::EpollManager::clientRoutine,
@@ -138,8 +148,13 @@ namespace HttpFramework {
     void Server::EpollManager::deleteConnection(Coroutine::routine_t id) {
         const auto &con = connectionsMap.at(id);
 
+        auto dst_addr = con.dst_addr_;
+        auto dst_port = con.dst_port_;
+
         connectionsMap.erase(id);
-        server_.logger_.info("Disconnect with "s + con.dst_addr_ + ":" + std::to_string(con.dst_port_));
+        ::epoll_ctl(epollObject_, EPOLL_CTL_DEL, id, nullptr);
+        server_.logger_.info("Disconnect with "s + dst_addr + ":" + std::to_string(dst_port)
+                             + "[id=" + std::to_string(id) + "]");
     }
 
 

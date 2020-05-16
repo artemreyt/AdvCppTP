@@ -6,6 +6,7 @@
 #include <string_view>
 #include <map>
 #include <mutex>
+#include <thread>
 
 namespace Logger
 {
@@ -74,7 +75,7 @@ namespace Logger
                 note << "(" << time_str << ")";
             }
 
-            note << ": << " << msg << " >>";
+            note << ": << " << msg << " >> [thread id: " << std::this_thread::get_id() << "]";
         } catch (std::ios_base::failure&)
         {
             throw LogRuntimeError("Fail to create to log message");

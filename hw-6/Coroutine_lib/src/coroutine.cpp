@@ -4,6 +4,11 @@
 #include <ucontext.h>
 #include <map>
 
+
+#include <iostream>
+#include <stdexcept>
+#include <thread>
+
 namespace Coroutine
 {
 
@@ -76,27 +81,21 @@ routine_t create(routine_t id, const RoutineFunction& function)
 	}
 }
 
-bool resume(routine_t id)
-{
-	auto& o = ordinator;
-	if (id == 0)
-		return false;
+bool resume(routine_t id) {
+    auto &o = ordinator;
+    if (id == 0)
+        return false;
 
-	const auto& routine = o.routines.at(id);
-	if (routine.finished)
-		return false;
-
-	o.current = id;
-	if (swapcontext(&o.ctx, &routine.ctx) < 0)
-	{
-		o.current = 0;
-		return false;
-	}
-
-
-	if (routine.exception)
-		std::rethrow_exception(routine.exception);
-
+    const auto &routine = o.routines.at(id);
+    if (routine.finished)
+        return false;
+    o.current = id;
+    if (swapcontext(&o.ctx, &routine.ctx) < 0) {
+        o.current = 0;
+        return false;
+    }
+    if (routine.exception)
+        std::rethrow_exception(routine.exception);
 	return true;
 }
 
