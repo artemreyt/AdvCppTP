@@ -7,12 +7,12 @@
 const std::string ip = "0.0.0.0";
 const uint16_t port = 8000;
 const std::string log_file = "log.txt";
-//Logger::StdoutLogger stdout_logger(Logger::t_level::DEBUG);
-Logger::FileLogger file_logger("log.txt", Logger::t_level::INFO);
+Logger::StdoutLogger stdout_logger(Logger::t_level::DEBUG);
+//Logger::FileLogger file_logger("log.txt", Logger::t_level::INFO);
 
 class MyServer: public HttpFramework::Server {
 public:
-    MyServer(): HttpFramework::Server(ip, port, file_logger) {}
+    MyServer(): HttpFramework::Server(ip, port, stdout_logger) {}
 
     HttpFramework::HttpResponse onRequest(const HttpFramework::HttpRequest &request) override {
         if (request.get_method() == "GET") {

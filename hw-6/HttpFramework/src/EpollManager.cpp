@@ -20,7 +20,7 @@ namespace HttpFramework {
     static const uint32_t MASTER_SOCKET_EVENTS = EPOLLIN | EPOLLEXCLUSIVE;
 
     Server::EpollManager::EpollManager(Server &server) :
-            server_(server), epollObject_(epoll_create(1)) {
+            server_(server), epollObject_(epoll_create1(0)) {
 
         if (epollObject_ == -1) {
             throw epoll_error(std::string("Epoll creation error: ")
@@ -42,7 +42,10 @@ namespace HttpFramework {
             static epoll_event Events[MAX_EVENTS];
 
             int nfds = ::epoll_wait(epollObject_, Events, MAX_EVENTS, -1);
-            server_.logger_.debug("Woke up with "s + std::to_string(nfds) + " events");
+
+            server_.logger_.debug("Woke up with "s + std::to_string(nfds) + " events epfd = " +
+                std::to_string(epollObject_));
+
             if (nfds < 0) {
                 if (errno == EINTR) continue;
                 throw epoll_error(std::string("epoll_wait error: ") + std::strerror(errno));
@@ -115,7 +118,7 @@ namespace HttpFramework {
             server_.logger_.error(err.what());
             throw;
         } catch (std::exception &err) {
-            server_.logger_.warn("User error[id="s + std::to_string(id) + "]: " + err.what());
+            server_.logger_.warn("Resume error[id="s + std::to_string(id) + "]: " + err.what());
         } catch (...) {
             server_.logger_.warn("Unknown user error");
         }
@@ -124,7 +127,7 @@ namespace HttpFramework {
             deleteConnection(id);
         } catch (std::out_of_range &err) {
             server_.logger_.error("deleteConnection Error[id=" + std::to_string(id) + "]: " + err.what());
-//            throw;
+            throw;
         }
     }
 
