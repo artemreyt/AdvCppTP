@@ -99,6 +99,23 @@ namespace HttpFramework {
         }
     }
 
+    void Server::EpollManager::addNewConnection(Connection &&connection) {
+        int id = connection.fd_;
+
+        connectionsMap.emplace(id, std::move(connection));
+        Coroutine::create(
+                id,
+                &Server::EpollManager::clientRoutine,
+                std::ref(*this)
+        );
+
+        epoll_event Event {};
+        Event.data.u32 = id;
+        Event.events = EPOLLIN;
+
+        addEvent(id, Event);
+    }
+
     void Server::EpollManager::handleClient(const epoll_event &event) {
         int id = event.data.u32;
 
@@ -129,23 +146,6 @@ namespace HttpFramework {
             server_.logger_.error("deleteConnection Error[id=" + std::to_string(id) + "]: " + err.what());
             throw;
         }
-    }
-
-    void Server::EpollManager::addNewConnection(Connection &&connection) {
-        int id = connection.fd_;
-
-        connectionsMap.emplace(id, std::move(connection));
-        Coroutine::create(
-                id,
-                &Server::EpollManager::clientRoutine,
-                std::ref(*this)
-                );
-
-        epoll_event Event {};
-        Event.data.u32 = id;
-        Event.events = EPOLLIN;
-
-        addEvent(id, Event);
     }
 
     void Server::EpollManager::deleteConnection(Coroutine::routine_t id) {
