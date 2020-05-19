@@ -28,28 +28,28 @@ namespace shmem {
 
     public:
 
-        Map(size_t mmap_size=MMAP_DEFAULT_SIZE):
-            state_(reinterpret_cast<AllocState*>(::mmap(nullptr,
-                                                        mmap_size,
-                                                        PROT_WRITE | PROT_READ,
-                                                        MAP_SHARED | MAP_ANONYMOUS,
-                                                        -1,
-                                                        0))),
-            allocator_(nullptr) {
-            allocator_ = Map<K, T>::allocator_type(state_);
-            if (state_ == MAP_FAILED) {
+        Map(size_t mmap_size=MMAP_DEFAULT_SIZE): allocator_(nullptr) {
+
+            auto mmap = ::mmap(nullptr, mmap_size, PROT_WRITE | PROT_READ,
+                               MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+            if (mmap == MAP_FAILED) {
                 throw MMapError{std::string("Mmap failed: ") + std::strerror(errno)};
             }
+
+            state_ = static_cast<AllocState *>(mmap);
+            allocator_ = allocator_type(state_);
 
             state_->start = reinterpret_cast<char *>(state_) + sizeof(*state_);
             state_->end = reinterpret_cast<char *>(state_) + mmap_size;
 
             sem_ = reinterpret_cast<sem_t *>(state_->start);
-            ::sem_init(sem_, 1, 1);
+            if (::sem_init(sem_, 1, 1) == -1) {
+                ::munmap(state_, MMAP_DEFAULT_SIZE);
+                throw MMapError{std::string("Semaphore init failure: ") + std::strerror((errno))};
+            }
+
             state_->start += sizeof(*sem_);
-
             mapObject_ = reinterpret_cast<MapType *>(state_->start);
-
             mapObject_ = new(mapObject_) MapType{allocator_};
             state_->start += sizeof(*mapObject_);
         }
@@ -68,34 +68,6 @@ namespace shmem {
             return at(utils::get_object_with_allocator<K>(key, allocator_));
         }
 
-        const T& at( const K& key ) const {
-            SemLock lock(*sem_);
-            return mapObject_->at(key);
-        }
-
-        template <typename U>
-        const T& at( const U& key ) const {
-            return at(utils::get_object_with_allocator<K>(key, allocator_));
-        }
-        
-        T& operator[](const K& key) {
-            try {
-                return at(key);
-            } catch (const std::out_of_range &ex) {
-                if constexpr (std::is_pod_v<T>) {
-                    return (*mapObject_)[key];
-                } else {
-                    insert(std::pair<const K, T>{key, utils::get_default_object_with_allocator<T>(allocator_)});
-                }
-                return at(key);
-            }
-        }
-
-        template <typename U>
-        T& operator[](const U& key) {
-            return operator[](utils::get_object_with_allocator<K>(key, allocator_));
-        }
-
         size_t erase(const K& key) {
             SemLock lock(*sem_);
             return mapObject_->erase(key);
@@ -106,10 +78,22 @@ namespace shmem {
             return erase(utils::get_object_with_allocator<K>(key, allocator_));
         }
 
-    private:
-        std::pair<typename MapType::iterator, bool> insert(const std::pair<const K, T>& pair_value) {
+        const allocator_type& get_allocator() const {
+            return allocator_;
+        }
+
+        auto insert(const K &key, const T &value) {
             SemLock lock(*sem_);
-            return mapObject_->insert(pair_value);
+            return mapObject_->insert_or_assign(key, value);
+        }
+
+        template<typename KeyType, typename ValueType>
+        auto insert(const KeyType &key_, const ValueType &value_) {
+            auto key = utils::get_object_with_allocator<K>(key_, allocator_);
+            auto value = utils::get_object_with_allocator<T>(value_, allocator_);
+
+            SemLock lock(*sem_);
+            return mapObject_->insert_or_assign(std::move(key), std::move(value));
         }
     };
 }
