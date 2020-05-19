@@ -6,23 +6,36 @@
 #include <unistd.h>
 #include <cstdint>
 
-uint16_t get_port_safety(char *val);
+bool get_port_safety(char *val, uint16_t &port);
 
-const size_t PACKET_SIZE = 8;
+const size_t PACKET_SIZE = 1048576; // 1 MB
 
 void callback(tcp::Connection &connection, uint32_t &event) {
-    const std::string &buffer = connection.get_buffer();
+    std::string &buffer = connection.get_buffer();
 
     if (event & tcp::READ_EVENT) {
         size_t bytes = connection.read();
 
         if (bytes == 0) {
             connection.close();
-        } else if (buffer.size() >= PACKET_SIZE) {
+        } else if (buffer.size() >= PACKET_SIZE || buffer.substr(buffer.size() - 4) == "stop") {
             event = tcp::WRITE_EVENT;
         }
     } else  {
+        std::cout << "send to " << connection.get_dst_ip() << ":" << connection.get_dst_port()
+                  << " " << buffer.size() << " bytes" << std::endl;
+
+        bool to_close = false;
+        if (buffer.substr(buffer.size() - 4) == "stop") {
+            buffer.resize(buffer.size() - 4);
+            to_close = true;
+        }
         connection.write(buffer.data(), buffer.size());
+
+        if (to_close) {
+            connection.close();
+            return;
+        }
         connection.clear_buffer();
         event = tcp::READ_EVENT;
     }
@@ -34,7 +47,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    uint16_t port = get_port_safety(argv[2]);
+    uint16_t port;
+    if (!get_port_safety(argv[2], port)) {
+        std::cerr << "Bad port" << std::endl;
+        return 1;
+    }
 
     try {
         tcp::Server server("0.0.0.0", port, callback);
@@ -49,32 +66,32 @@ int main(int argc, char **argv) {
             } catch (const std::exception &ex) {
                 std::cerr << ex.what() << std::endl;
                 std::cout << "Terminating server" << std::endl;
-                exit(EXIT_FAILURE);
+                return 1;
             } catch (...) {
                 std::cout << "Unknown error" << std::endl;
                 std::cout << "Terminating server" << std::endl;
-                exit(EXIT_FAILURE);
+                return 1;
             }
         }
     } catch (const tcp::bad_ip_address &ex) {
-        std::cout << ex.what() << std::endl;
+        std::cerr << ex.what() << std::endl;
         std::cout << "Try another ip address" << std::endl;
     }
     return 0;
 }
 
-uint16_t get_port_safety(char *val) {
-    unsigned long port;
+bool get_port_safety(char *val, uint16_t &port) {
+    unsigned long long_port;
 
     try {
-        port = std::stoul(val);
+        long_port = std::stoul(val);
     } catch (const std::exception &ex) {
-        std::cout << "Bad port" << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
     if (port > UINT16_MAX) {
-        std::cout << "Port must be <= " << UINT16_MAX << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
-    return static_cast<uint16_t>(port);
+
+    port = static_cast<uint16_t>(long_port);
+    return true;
 }

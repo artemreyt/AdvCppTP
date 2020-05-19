@@ -68,13 +68,12 @@ namespace tcp {
 
     size_t Connection::read(size_t size) {
         size = (size == -1) ? MAX_BYTES_READ : size;
-        std::string buffer(size + 1, '\0');
+        static std::string buffer(size + 1, '\0');
         ssize_t bytes = ::recv(fd_, buffer.data(), size, MSG_NOSIGNAL);
 
         if (bytes == -1)
             throw socket_error(std::string("Read error:") + std::strerror(errno));
-        buffer.resize(bytes);
-        buffer_ += buffer;
+        buffer_.append(buffer, 0, bytes);
         return static_cast<size_t>(bytes);
     }
 
@@ -136,8 +135,12 @@ namespace tcp {
         return this == &other;
     }
 
-    const std::string &Connection::get_buffer() const {
+    std::string &Connection::get_buffer() {
         return buffer_;
+    }
+
+    const Descriptor::Descriptor &Connection::get_fd() const {
+        return fd_;
     }
 
     void Connection::clear_buffer() {
