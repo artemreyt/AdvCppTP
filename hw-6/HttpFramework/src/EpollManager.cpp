@@ -39,7 +39,7 @@ namespace HttpFramework {
 
     void Server::EpollManager::run() {
         while (true) {
-            static epoll_event Events[MAX_EVENTS];
+            epoll_event Events[MAX_EVENTS];
 
             int nfds = ::epoll_wait(epollObject_, Events, MAX_EVENTS, -1);
 
