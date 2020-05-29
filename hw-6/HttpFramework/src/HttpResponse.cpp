@@ -7,7 +7,7 @@ namespace HttpFramework {
 
     const std::string ENDLINE = "\r\n";
 
-    const std::map<uint16_t, std::string> g_status_info {
+    const std::unordered_map<uint16_t, std::string> g_status_info {
             {200, "OK"},
             {400, "Bad Request"},
             {404, "Not Found"},

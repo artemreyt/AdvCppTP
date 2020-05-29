@@ -76,9 +76,8 @@ namespace Logger
             }
 
             note << ": << " << msg << " >> [thread id: " << std::this_thread::get_id() << "]";
-        } catch (std::ios_base::failure&)
-        {
-            throw LogRuntimeError("Fail to create to log message");
+        } catch (std::ios_base::failure&) {
+            throw LogRuntimeError("Fail to create log message");
         }
 
         try

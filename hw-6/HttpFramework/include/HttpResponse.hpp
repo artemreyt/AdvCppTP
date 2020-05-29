@@ -4,7 +4,7 @@
 #include "Connection.hpp"
 #include <utility>
 #include <string>
-#include <map>
+#include <unordered_map>
 
 namespace HttpFramework {
 
@@ -31,7 +31,7 @@ namespace HttpFramework {
 
         std::string version_;
         uint16_t    status_code_;
-        std::map<std::string, std::string> headers_;
+        std::unordered_map<std::string, std::string> headers_;
         std::string body_;
     };
 }

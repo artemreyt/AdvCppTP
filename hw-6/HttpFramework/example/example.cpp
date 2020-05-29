@@ -7,7 +7,7 @@
 const std::string ip = "0.0.0.0";
 const uint16_t port = 8000;
 const std::string log_file = "log.txt";
-Logger::StdoutLogger stdout_logger(Logger::t_level::WARNING);
+Logger::StdoutLogger stdout_logger(Logger::t_level::DEBUG);
 //Logger::FileLogger file_logger("log.txt", Logger::t_level::INFO);
 
 class MyServer: public HttpFramework::Server {

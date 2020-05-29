@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <functional>
+#include <chrono>
 
 namespace HttpFramework {
     using std::string_literals::operator""s;
@@ -18,6 +19,8 @@ namespace HttpFramework {
     static const size_t MAX_EVENTS = 1000;
     static const size_t MAX_ACCEPTIONS = 1;
     static const uint32_t MASTER_SOCKET_EVENTS = EPOLLIN | EPOLLEXCLUSIVE;
+    static const int EPOLL_TIMEOUT = 200;
+
 
     Server::EpollManager::EpollManager(Server &server) :
             server_(server), epollObject_(epoll_create1(0)) {
@@ -41,7 +44,7 @@ namespace HttpFramework {
         while (true) {
             epoll_event Events[MAX_EVENTS];
 
-            int nfds = ::epoll_wait(epollObject_, Events, MAX_EVENTS, -1);
+            int nfds = ::epoll_wait(epollObject_, Events, MAX_EVENTS, EPOLL_TIMEOUT);
 
             server_.logger_.debug("Woke up with "s + std::to_string(nfds) + " events epfd = " +
                 std::to_string(epollObject_));
@@ -49,6 +52,9 @@ namespace HttpFramework {
             if (nfds < 0) {
                 if (errno == EINTR) continue;
                 throw epoll_error(std::string("epoll_wait error: ") + std::strerror(errno));
+            } else if (nfds == 0) {
+                checkTimeouts();
+                continue;
             }
 
             for (int i = 0; i < nfds; ++i) {
@@ -102,7 +108,13 @@ namespace HttpFramework {
     void Server::EpollManager::addNewConnection(Connection &&connection) {
         int id = connection.fd_;
 
-        connectionsMap.emplace(id, std::move(connection));
+        RoutineInfo info {
+            .con = std::move(connection),
+            .current_event = EPOLLIN,
+            .timeout = std::chrono::high_resolution_clock::now() + server_.read_timeout_
+        };
+        routines_.emplace(id, std::move(info));
+
         Coroutine::create(
                 id,
                 &Server::EpollManager::clientRoutine,
@@ -118,6 +130,7 @@ namespace HttpFramework {
 
     void Server::EpollManager::handleClient(const epoll_event &event) {
         int id = event.data.u32;
+        RoutineInfo &info = routines_.at(id);
 
         if (event.events & EPOLLERR || event.events & EPOLLHUP) {
             deleteConnection(id);
@@ -126,15 +139,23 @@ namespace HttpFramework {
 
         try {
             Coroutine::resume(id);
-        } catch (tcp_error &err) {
-            server_.logger_.warn(err.what());
-        } catch (http_error &err) {
+
+            auto now = std::chrono::high_resolution_clock::now();
+            if (info.current_event == EPOLLIN) {
+                info.timeout = now + server_.read_timeout_;
+            } else {
+                info.timeout = now + server_.write_timeout_;
+            }
+
+        } catch (const tcp_error &err) {
+            server_.logger_.warn(err.what() + " [id="s + std::to_string(id) + "]");
+        } catch (const http_error &err) {
             server_.logger_.warn(err.what());
             // TODO: send response to client with certain status_code
-        } catch (epoll_error &err) {
-            server_.logger_.error(err.what());
+        } catch (const epoll_error &err) {
+            server_.logger_.error(err.what() + " [id="s + std::to_string(id) + "]");
             throw;
-        } catch (std::exception &err) {
+        } catch (const std::exception &err) {
             server_.logger_.warn("Resume error[id="s + std::to_string(id) + "]: " + err.what());
         } catch (...) {
             server_.logger_.warn("Unknown user error");
@@ -144,18 +165,19 @@ namespace HttpFramework {
             deleteConnection(id);
         } catch (std::out_of_range &err) {
             server_.logger_.error("deleteConnection Error[id=" + std::to_string(id) + "]: " + err.what());
-            throw;
+//            throw;
+        } catch (...) {
+            server_.logger_.error("deleteConnection Error[id=" + std::to_string(id) + "]");
         }
     }
 
-    void Server::EpollManager::deleteConnection(Coroutine::routine_t id) {
-        const auto &con = connectionsMap.at(id);
+    void Server::EpollManager::deleteConnection(int id) {
+        const auto &con = routines_.at(id).con;
 
         auto dst_addr = con.dst_addr_;
         auto dst_port = con.dst_port_;
 
-        connectionsMap.erase(id);
-        ::epoll_ctl(epollObject_, EPOLL_CTL_DEL, id, nullptr);
+        routines_.erase(id);
         server_.logger_.info("Disconnect with "s + dst_addr + ":" + std::to_string(dst_port)
                              + "[id=" + std::to_string(id) + "]");
     }
@@ -168,19 +190,24 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::changeEvent(Connection &connection, uint32_t new_event) {
-        epoll_event Event{};
-        Event.data.u32 = connection.fd_;
-        Event.events = new_event;
+    void Server::EpollManager::changeEvent(int id, uint32_t new_event) {
+        RoutineInfo &info = routines_.at(id);
 
-        if (::epoll_ctl(epollObject_, EPOLL_CTL_MOD, connection.fd_, &Event) == -1) {
+        epoll_event Event{};
+        Event.data.u32 = id;
+        Event.events = new_event;
+        info.current_event = new_event;
+
+        if (::epoll_ctl(epollObject_, EPOLL_CTL_MOD, id, &Event) == -1) {
             throw epoll_error(std::string("Epoll mod error: ")
                                 + std::strerror(errno));
         }
     }
 
     void Server::EpollManager::clientRoutine() {
-        auto &connection = connectionsMap.at(Coroutine::current());
+        int id = Coroutine::current();
+        RoutineInfo &info = routines_.at(id);
+        Connection &connection = info.con;
 
         while (true) {
             HttpRequest request(connection);
@@ -188,7 +215,7 @@ namespace HttpFramework {
             connection.clear_buffer();
 
             HttpResponse response = server_.onRequest(request);
-            changeEvent(connection, EPOLLOUT);
+            changeEvent(id, EPOLLOUT);
 
             response.send(connection);
             server_.logger_.debug("Sent packet to "s + connection.get_dst_ip() + ":"
@@ -196,10 +223,38 @@ namespace HttpFramework {
 
             if (request.get_headers().count("Connection")
                 && request.get_headers().at("Connection") == "Keep-Alive") {
-                changeEvent(connection, EPOLLIN);
+                changeEvent(id, EPOLLIN);
                 Coroutine::yield();
             } else {
                 break;
+            }
+        }
+    }
+
+    void Server::EpollManager::checkTimeouts() {
+        auto now = std::chrono::high_resolution_clock::now();
+        std::vector<int> ids;
+
+
+        for (auto &[id, info]: routines_) {
+            if (now > info.timeout) {
+                auto &connection = info.con;
+
+                server_.logger_.warn("Timeout reached for "s + connection.dst_addr_ +
+                                     ":" + std::to_string(connection.dst_port_) + "[id=" +
+                                     std::to_string(id) + "]");
+                ids.push_back(id);
+            }
+        }
+
+        for (int id: ids ) {
+            try {
+                if (!Coroutine::finish(id)) throw std::out_of_range("Coroutine::finish error");
+                deleteConnection(id);
+            } catch (std::out_of_range &err) {
+                server_.logger_.warn("Fail to delete connection after timeout [id="s +
+                    std::to_string(id) + "]");
+                throw;
             }
         }
     }

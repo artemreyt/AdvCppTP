@@ -19,7 +19,7 @@ namespace
 
 thread_local struct Ordinator
 {
-	static constexpr size_t STACK_SIZE = 1 << 16;
+	static constexpr size_t STACK_SIZE = 1 << 18;
 
 	std::map<routine_t, Routine> routines;
 	std::queue<decltype(routines)::node_type> finished;

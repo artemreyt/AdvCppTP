@@ -10,12 +10,15 @@
 #include <string>
 #include <cstdint>
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include <sys/epoll.h>
 #include <thread>
+#include <chrono>
 
 namespace HttpFramework {
+
+    using namespace std::chrono;
 
     class Server {
     public:
@@ -32,6 +35,8 @@ namespace HttpFramework {
     protected:
         Descriptor::Descriptor masterSocket_;
         Logger::BaseLogger &logger_;
+        const std::chrono::seconds read_timeout_=2s;
+        const std::chrono::seconds write_timeout_=2s;
 
 
     public:
@@ -45,15 +50,24 @@ namespace HttpFramework {
 
         private:
             void addNewConnection(Connection &&connection);
-            void deleteConnection(Coroutine::routine_t id);
+            void deleteConnection(int id);
             void addEvent(int fd, epoll_event &Event);
-            void changeEvent(Connection &connection, uint32_t new_event);
+            void changeEvent(int id, uint32_t new_event);
             void acceptClients();
             void handleClient(const epoll_event &event);
             void clientRoutine();
+            void checkTimeouts();
+            void resumeRoutine();
+
+
+            struct RoutineInfo {
+                Connection con;
+                uint32_t   current_event;
+                high_resolution_clock::time_point timeout;
+            };
 
             Descriptor::Descriptor epollObject_;
-            std::map<int, Connection> connectionsMap;
+            std::unordered_map<int, RoutineInfo> routines_;
             Server &server_;
         };
     };
