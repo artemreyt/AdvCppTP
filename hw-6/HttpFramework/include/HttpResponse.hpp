@@ -13,11 +13,7 @@ namespace HttpFramework {
         explicit HttpResponse(const std::string &version, uint16_t status_code=200);
         void setStatus(uint16_t status_code);
 
-        template <typename ...Args>
-        bool setHeader(Args&&... args) {
-            auto res = headers_.emplace(std::forward<Args>(args)...);
-            return res.second;
-        }
+        bool setHeader(std::string header, std::string value);
 
         template <typename Str>
         std::enable_if_t<std::is_assignable_v<std::string, Str>, void>

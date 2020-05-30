@@ -52,4 +52,9 @@ namespace HttpFramework {
             }
         }
     }
+
+    bool HttpResponse::setHeader(std::string header, std::string value) {
+        auto res = headers_.emplace(std::move(header), std::move(value));
+        return res.second;
+    }
 }

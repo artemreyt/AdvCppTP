@@ -72,6 +72,7 @@ namespace HttpFramework {
             Server &server_;
         };
     };
+
 }
 
 #endif // HTTP_SERVER_HPP
