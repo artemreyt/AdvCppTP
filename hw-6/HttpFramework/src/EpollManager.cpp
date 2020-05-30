@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <functional>
 #include <chrono>
+#include <fcntl.h>
 
 #include <mutex>
 
@@ -80,18 +81,14 @@ namespace HttpFramework {
             Connection con;
             sockaddr_in client_addr{};
             socklen_t len = sizeof(client_addr);
-            Descriptor::Descriptor connect_fd(::accept(server_.masterSocket_,
-                    reinterpret_cast<sockaddr *>(&client_addr), &len));
+            Descriptor::Descriptor connect_fd(::accept4(server_.masterSocket_,
+                    reinterpret_cast<sockaddr *>(&client_addr), &len, O_NONBLOCK));
 
             if (connect_fd == -1) {
                 if (errno == EINTR) continue;
                 else if (errno == EAGAIN || errno == EWOULDBLOCK)
                     return;
                 throw accept_error();
-            }
-
-            if (set_nonblock(connect_fd) == -1) {
-                continue;
             }
 
             get_binded_ip_port(connect_fd.data(), con.src_addr_, con.src_port_);

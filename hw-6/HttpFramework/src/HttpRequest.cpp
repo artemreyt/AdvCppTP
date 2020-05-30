@@ -27,9 +27,9 @@ namespace HttpFramework {
             Coroutine::yield();
         }
 
-        if (method_ == "POST") {
+        if (method_ == methods::POST) {
             read_post(headers_end + 4);       // 4 = strlen("\r\n\r\n")
-        } else if (method_ == "GET") {
+        } else if (method_ == methods::GET) {
             read_get();
         } else {
             throw httpNotImplemented("Only GET and POST methods are available");
@@ -39,8 +39,18 @@ namespace HttpFramework {
     void HttpRequest::parse_headers(size_t end) {
         auto &buffer = connection_.get_buffer();
         std::istringstream stream(buffer.substr(0, end ? end: std::string::npos));
+        std::string method_str;
 
-        stream >> method_ >> path_ >> version_;
+        stream >> method_str >> path_ >> version_;
+
+        if (method_str == "GET") {
+            method_ = methods::GET;
+        } else if (method_str == "POST") {
+            method_ = methods::POST;
+        } else {
+            method_ = methods::UNSUPPORTED;
+        }
+
         version_ = version_.substr(version_.find('/') + 1);
         stream.ignore(2);
 
@@ -61,7 +71,7 @@ namespace HttpFramework {
     }
 
     void HttpRequest::read_get() {
-        if (path_.find("/?") != std::string::npos) {
+        if (path_.find('?') != std::string::npos) {
             std::string query_string = path_.substr(path_.find("/?") + 2);
             parse_query_string(query_string, params_);
         }
@@ -93,7 +103,7 @@ namespace HttpFramework {
         return params_;
     }
 
-    const std::string &HttpRequest::get_method() const {
+    const HttpRequest::methods &HttpRequest::get_method() const {
         return method_;
     }
 

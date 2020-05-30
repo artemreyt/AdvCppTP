@@ -15,7 +15,7 @@ public:
     MyServer(): HttpFramework::Server(ip, port, stdout_logger) {}
 
     HttpFramework::HttpResponse onRequest(const HttpFramework::HttpRequest &request) override {
-        if (request.get_method() == "GET") {
+        if (request.get_method() == HttpFramework::HttpRequest::methods::GET) {
             std::string comment;
             for (const auto &[key, value]: request.get_params()) {
                 comment += key + ":" + value + " ";

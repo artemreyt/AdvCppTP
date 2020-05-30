@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <sstream>
 #include <thread>
+#include <unordered_map>
 
 
 namespace HttpFramework {
@@ -61,7 +62,7 @@ namespace HttpFramework {
         return res_str;
     }
 
-    void parse_query_string(const std::string &query_string, std::map<std::string, std::string> &params) {
+    void parse_query_string(const std::string &query_string, std::unordered_map<std::string, std::string> &params) {
         std::string decode_query = decode_url(query_string);
 
         size_t start = 0;
