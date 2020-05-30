@@ -5,9 +5,9 @@
 #include <map>
 
 
-#include <iostream>
+//#include <iostream>
 #include <stdexcept>
-#include <thread>
+//#include <thread>
 
 namespace Coroutine
 {
@@ -37,7 +37,7 @@ struct Routine
 	std::unique_ptr<uint8_t[]> stack;
 	bool finished = false;
 	ucontext_t ctx;
-	std::exception_ptr exception;
+	std::exception_ptr exception = {};
 
 	void reset(const RoutineFunction& f)
 	{
@@ -51,10 +51,10 @@ struct Routine
 			: func(f),
 			  stack(std::make_unique<uint8_t[]>(Ordinator::STACK_SIZE))
 	{
+        getcontext(&ctx);
 		ctx.uc_stack.ss_sp = stack.get();
 		ctx.uc_stack.ss_size = Ordinator::STACK_SIZE;
 		ctx.uc_link = &ordinator.ctx;
-		getcontext(&ctx);
 		makecontext(&ctx, entry, 0);
 	}
 
@@ -67,7 +67,7 @@ routine_t create(routine_t id, const RoutineFunction& function)
 	auto& o = ordinator;
 	if (o.finished.empty())
 	{
-		o.routines.emplace(std::make_pair(id, function));
+		o.routines.emplace(id, function);
 		return id;
 	}
 	else
@@ -89,13 +89,23 @@ bool resume(routine_t id) {
     const auto &routine = o.routines.at(id);
     if (routine.finished)
         return false;
+
     o.current = id;
     if (swapcontext(&o.ctx, &routine.ctx) < 0) {
         o.current = 0;
         return false;
     }
-    if (routine.exception)
-        std::rethrow_exception(routine.exception);
+
+    if (routine.finished) {
+        auto exception = routine.exception;
+        o.finished.emplace(o.routines.extract(id));
+
+        if (exception) {
+            std::rethrow_exception(exception);
+        }
+
+    }
+
 	return true;
 }
 
@@ -106,7 +116,14 @@ void yield()
 	auto& routine = o.routines.at(id);
 
 	o.current = 0;
+
+    if (routine.exception)
+        std::rethrow_exception(routine.exception);
+
 	swapcontext(&routine.ctx, &o.ctx);
+
+    if (routine.exception)
+        std::rethrow_exception(routine.exception);
 }
 
 routine_t current()
@@ -114,19 +131,19 @@ routine_t current()
 	return ordinator.current;
 }
 
-bool finish(routine_t id) {
-    auto &o = ordinator;
-
-    try {
-        auto &routine = o.routines.at(id);
-
-        routine.finished = true;
-        o.current = 0;
-        o.finished.emplace(o.routines.extract(id));
-    } catch (std::out_of_range&) {
-        return false;
+void kill(routine_t id, const std::exception_ptr &ex) {
+    if (id == 0) {
+        throw std::invalid_argument("You can't kill main routine");
+    } else if (!ex) {
+        throw std::invalid_argument("Empty exception_ptr");
     }
-    return true;
+
+    auto &o = ordinator;
+    auto &routine = o.routines.at(id);
+
+    routine.exception = ex;
+    resume(id); // must throw ex
+    throw std::logic_error("Resume had to throw exception, but didn't");
 }
 
 
@@ -148,7 +165,8 @@ void entry()
 		routine.exception = std::current_exception();
 	}
 
-	finish(id);
+    routine.finished = true;
+    o.current = 0;
 }
 
 }

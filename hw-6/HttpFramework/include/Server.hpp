@@ -22,7 +22,8 @@ namespace HttpFramework {
 
     class Server {
     public:
-        Server(const std::string &ip, uint16_t port, Logger::BaseLogger &logger);
+        Server(const std::string &ip, uint16_t port, Logger::BaseLogger &logger,
+               std::chrono::seconds read=2s, std::chrono::seconds write=2s);
         ~Server() noexcept;
 
         void run(size_t number_threads=std::thread::hardware_concurrency());
@@ -47,6 +48,7 @@ namespace HttpFramework {
             EpollManager(const EpollManager &other) = delete;
             void run();
             void operator()();
+            void operator=(const EpollManager &other) = delete;
 
         private:
             void addNewConnection(Connection &&connection);
@@ -57,7 +59,6 @@ namespace HttpFramework {
             void handleClient(const epoll_event &event);
             void clientRoutine();
             void checkTimeouts();
-            void resumeRoutine();
 
 
             struct RoutineInfo {

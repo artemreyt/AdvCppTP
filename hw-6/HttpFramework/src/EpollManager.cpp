@@ -13,6 +13,8 @@
 #include <functional>
 #include <chrono>
 
+#include <mutex>
+
 namespace HttpFramework {
     using std::string_literals::operator""s;
 
@@ -60,7 +62,7 @@ namespace HttpFramework {
             for (int i = 0; i < nfds; ++i) {
                 int id = Events[i].data.u32 ;
 
-                server_.logger_.debug("id of Event: " + std::to_string(id));
+                server_.logger_.debug("id of Event: "s.append(std::to_string(id)));
 
                 if (id == server_.masterSocket_) {
                     acceptClients();
@@ -118,7 +120,7 @@ namespace HttpFramework {
         Coroutine::create(
                 id,
                 &Server::EpollManager::clientRoutine,
-                std::ref(*this)
+                this
         );
 
         epoll_event Event {};
@@ -174,8 +176,8 @@ namespace HttpFramework {
     void Server::EpollManager::deleteConnection(int id) {
         const auto &con = routines_.at(id).con;
 
-        auto dst_addr = con.dst_addr_;
-        auto dst_port = con.dst_port_;
+        const auto dst_addr = con.dst_addr_;
+        const auto dst_port = con.dst_port_;
 
         routines_.erase(id);
         server_.logger_.info("Disconnect with "s + dst_addr + ":" + std::to_string(dst_port)
@@ -206,11 +208,15 @@ namespace HttpFramework {
 
     void Server::EpollManager::clientRoutine() {
         int id = Coroutine::current();
-        RoutineInfo &info = routines_.at(id);
+        RoutineInfo &info = this->routines_.at(id);
+
+        int id1 = info.con.fd_.data();
+
         Connection &connection = info.con;
 
         while (true) {
             HttpRequest request(connection);
+
             request.receive_request();
             connection.clear_buffer();
 
@@ -249,7 +255,14 @@ namespace HttpFramework {
 
         for (int id: ids ) {
             try {
-                if (!Coroutine::finish(id)) throw std::out_of_range("Coroutine::finish error");
+
+                try {
+                    Coroutine::kill(id, std::make_exception_ptr(http_error("Timeout reached")));
+                } catch (...) {
+
+                }
+
+
                 deleteConnection(id);
             } catch (std::out_of_range &err) {
                 server_.logger_.warn("Fail to delete connection after timeout [id="s +

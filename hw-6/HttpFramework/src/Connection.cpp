@@ -68,15 +68,16 @@ namespace HttpFramework {
 
     size_t Connection::read(size_t size) {
         size = (size == -1) ? MAX_BYTES_READ : size;
-        std::string buffer(size + 1, '\0');
-        ssize_t bytes = ::recv(fd_, buffer.data(), size, MSG_NOSIGNAL);
+        char buffer[size + 1];
+//        buffer.reserve(size + 1);
+        ssize_t bytes = ::recv(fd_, buffer, size, MSG_NOSIGNAL);
+        buffer[bytes] = '\0';
 
         if (bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
             return 0;
         else if (bytes == -1)
             throw tcp_error(std::string("Read error:") + std::strerror(errno));
-        buffer.resize(bytes);
-        buffer_ += buffer;
+        buffer_.append(buffer);
         return static_cast<size_t>(bytes);
     }
 
@@ -118,5 +119,9 @@ namespace HttpFramework {
 
     void Connection::clear_buffer() {
         buffer_.clear();
+    }
+
+    int Connection::get_fd() const {
+        return fd_.data();
     }
 }

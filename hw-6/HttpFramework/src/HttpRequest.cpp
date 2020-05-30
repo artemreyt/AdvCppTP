@@ -13,6 +13,8 @@ namespace HttpFramework {
         size_t pos = 0;
         size_t headers_end;
 
+        int id = connection_.get_fd();
+
         while (true) {
             size_t bytes = connection_.read();
 

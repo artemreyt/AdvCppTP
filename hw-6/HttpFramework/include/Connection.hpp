@@ -33,6 +33,7 @@ namespace HttpFramework {
         [[ nodiscard ]] const uint16_t &get_src_port() const;
         [[ nodiscard ]] const uint16_t &get_dst_port() const;
         [[ nodiscard ]] const std::string &get_buffer() const;
+        [[ nodiscard ]] int get_fd() const;
         void clear_buffer();
 
         friend class Server;
@@ -43,7 +44,6 @@ namespace HttpFramework {
         std::string src_addr_;
         uint16_t src_port_{};
         uint16_t dst_port_{};
-        uint32_t last_events;
         std::string buffer_;
     };
 }

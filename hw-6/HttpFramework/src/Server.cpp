@@ -16,8 +16,9 @@ namespace HttpFramework {
     static const int    g_default_max_connections = SOMAXCONN;
     static const size_t g_max_threads = 16;
 
-    Server::Server(const std::string &ip, uint16_t port, Logger::BaseLogger &logger):
-        logger_(logger){
+    Server::Server(const std::string &ip, uint16_t port, Logger::BaseLogger &logger,
+           std::chrono::seconds read, std::chrono::seconds write):
+        logger_(logger), read_timeout_(read), write_timeout_(write) {
         open(ip, port);
     }
 
@@ -41,6 +42,9 @@ namespace HttpFramework {
             throw bad_ip_address(ip);
         }
         addr.sin_port = htons(port);
+
+        int optval = 1;
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
         if (::bind(fd.data(), reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == -1) {
             throw tcp_error(std::string("Bind error: ") + std::strerror(errno));
@@ -68,6 +72,15 @@ namespace HttpFramework {
         }
 
         std::thread epoll_threads[number_threads - 1];
+//        std::vector<EpollManager> managers;
+//
+//        managers.reserve(number_threads - 1);
+//        for (int i = 0; i < number_threads - 1; i++) {
+//            managers.emplace_back(EpollManager(*this));
+//            epoll_threads[i] = std::thread(std::ref(managers.back()));
+//        }
+//        managers.back()();
+
         for (auto &thread: epoll_threads) {
             thread = std::thread(EpollManager(*this));
         }
