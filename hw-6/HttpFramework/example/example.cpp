@@ -7,8 +7,7 @@
 const std::string ip = "0.0.0.0";
 const uint16_t port = 8000;
 const std::string log_file = "log.txt";
-Logger::StdoutLogger stdout_logger(Logger::t_level::WARNING);
-//Logger::FileLogger file_logger("log.txt", Logger::t_level::INFO);
+Logger::StdoutLogger stdout_logger(Logger::t_level::DEBUG);
 
 class MyServer: public HttpFramework::Server {
 public:
@@ -18,7 +17,7 @@ public:
         if (request.get_method() == HttpFramework::HttpRequest::methods::GET) {
             std::string comment;
             for (const auto &[key, value]: request.get_params()) {
-                comment += key + ":" + value + " ";
+                comment += (key + " -> ").append(value + " | ");
             }
             logger_.debug("[USER]: GET request got with params: " + comment);
 

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <string_view>
 
 
 namespace HttpFramework {
@@ -46,32 +47,46 @@ namespace HttpFramework {
         return str;
     }
 
-    std::string decode_url(const std::string &url) {
-        std::string res_str;
+    std::string decode_url(std::string_view encoded_str) {
+        std::string result;
+        while (!encoded_str.empty()) {
+            switch (encoded_str.front()) {
+                case '%': {
+                    if (encoded_str.size() < 3) {
+                        return std::string();
+                    }
 
-        const char *c_str = url.c_str();
-        while (*c_str) {
-            if (*c_str == '%' && c_str[1] && c_str[2]) {
-                res_str += std::strtoul(std::string(c_str + 1, 2).c_str(), nullptr, 16);
-                c_str += 3;
-            } else {
-                res_str += *c_str;
-                c_str++;
+                    const char hex[] = {encoded_str[1], encoded_str[2], '\0'};
+                    result += static_cast<char>(std::strtoul(hex, nullptr, 16));
+
+                    encoded_str.remove_prefix(3);
+                    break;
+                }
+                default: {
+                    result += encoded_str.front();
+                    encoded_str.remove_prefix(1);
+                }
             }
         }
-        return res_str;
+        return result;
     }
 
-    void parse_query_string(const std::string &query_string, std::unordered_map<std::string, std::string> &params) {
-        std::string decode_query = decode_url(query_string);
+    void parse_query_string(std::string_view query_string,
+                            std::unordered_map<std::string, std::string> &params) {
+        while (!query_string.empty()) {
+            if (query_string.front() == '&') {
+                query_string.remove_prefix(1);
+            }
 
-        size_t start = 0;
-        while (start != std::string::npos) {
-            size_t delim_pos = decode_query.find('=');
-            auto key = decode_query.substr(start, delim_pos);
-            start = decode_query.find('&');
-            auto value = decode_query.substr(delim_pos, start);
-            params.emplace(std::move(key), std::move(value));
+            auto line = query_string.substr(0, query_string.find('&'));
+
+            size_t header_len = line.find('=');
+
+            std::string_view header = line.substr(0, header_len);
+            std::string_view value = line.substr(header_len+1);
+
+            params.emplace(decode_url(header), decode_url(value));
+            query_string.remove_prefix(line.size());
         }
     }
 

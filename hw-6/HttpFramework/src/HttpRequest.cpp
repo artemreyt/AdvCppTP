@@ -41,6 +41,7 @@ namespace HttpFramework {
         std::istringstream stream(buffer.substr(0, end ? end: std::string::npos));
         std::string method_str;
 
+
         stream >> method_str >> path_ >> version_;
 
         if (method_str == "GET") {
@@ -72,7 +73,7 @@ namespace HttpFramework {
 
     void HttpRequest::read_get() {
         if (path_.find('?') != std::string::npos) {
-            std::string query_string = path_.substr(path_.find("/?") + 2);
+            std::string query_string = path_.substr(path_.find('?') + 1);
             parse_query_string(query_string, params_);
         }
     }

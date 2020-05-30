@@ -15,7 +15,7 @@ namespace HttpFramework {
     int  set_nonblock(int fd);
     std::string&    lstrip(std::string &str);
     std::string     decode_url(const std::string &url);
-    void            parse_query_string(const std::string &url,
+    void            parse_query_string(std::string_view url,
                                        std::unordered_map<std::string, std::string> &params);
     std::string     string_thread_id();
 }
