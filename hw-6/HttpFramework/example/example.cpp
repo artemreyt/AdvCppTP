@@ -24,7 +24,6 @@ public:
             HttpFramework::HttpResponse response(request.get_version(), 200);
             response.setHeader("Content-Type", "text/plain");
             std::string msg = "Hello, world!";
-            response.setHeader("Content-Length", std::to_string(msg.length()));
             response.setBody(msg);
             return response;
         }

@@ -54,7 +54,13 @@ namespace HttpFramework {
     }
 
     bool HttpResponse::setHeader(std::string header, std::string value) {
+
         auto res = headers_.emplace(std::move(header), std::move(value));
         return res.second;
+    }
+
+    void HttpResponse::setBody(std::string body) {
+        body_ = std::move(body);
+        setHeader("Content-Length", std::to_string(body_.size()));
     }
 }

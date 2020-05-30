@@ -15,11 +15,7 @@ namespace HttpFramework {
 
         bool setHeader(std::string header, std::string value);
 
-        template <typename Str>
-        std::enable_if_t<std::is_assignable_v<std::string, Str>, void>
-        setBody(Str &&body) {
-            body_ = std::forward<Str>(body);
-        }
+        void setBody(std::string body);
 
     private:
         friend class Server;
