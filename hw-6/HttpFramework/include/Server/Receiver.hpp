@@ -16,7 +16,8 @@ namespace HttpFramework::Server {
         http_structures::HttpRequest    receive();
 
     private:
-        void    split_until_body(std::string_view &first_line, std::string_view &headers);
+        void           split_until_body(std::string_view &first_line, std::string_view &headers);
+        std::string    read_body(size_t start_pos, size_t body_len);
 
         Connection& connection_;
     };

@@ -1,119 +1,32 @@
 #include "HttpRequest.hpp"
+#include "FirstLines.h"
 #include "Coroutine.hpp"
-#include "Errors.hpp"
 #include "utils/utils.hpp"
-#include <sstream>
+#include "constants.hpp"
+#include <string>
 
 
 namespace HttpFramework::http_structures {
-    HttpRequest::HttpRequest(Connection &con): connection_(con) {}
+    void HttpRequest::make_params() {
+        const std::string &path = first_line_.get_path();
+        size_t pos = path.find(constants::strings::question_mark);
 
-    void HttpRequest::receive_request() {
-        auto &buffer = connection_.get_buffer();
-        size_t pos = 0;
-        size_t headers_end;
-
-        int id = connection_.get_fd();
-
-        while (true) {
-            size_t bytes = connection_.read();
-
-            headers_end= buffer.find("\r\n\r\n", pos);
-            if (headers_end != std::string::npos) {
-                parse_headers(headers_end);
-                break;
-            }
-            pos += bytes;
-            Coroutine::yield();
+        if (pos != std::string::npos) {
+            utils::parse_query_string(std::string_view(path).substr(pos + 1), params_);
         }
 
-        if (method_ == methods::POST) {
-            read_post(headers_end + 4);       // 4 = strlen("\r\n\r\n")
-        } else if (method_ == methods::GET) {
-            read_get();
-        } else {
-            throw httpNotImplemented("Only GET and POST methods are available");
-        }
     }
 
-    void HttpRequest::parse_headers(size_t end) {
-        auto &buffer = connection_.get_buffer();
-        std::istringstream stream(buffer.substr(0, end ? end: std::string::npos));
-        std::string method_str;
-
-
-        stream >> method_str >> path_ >> version_;
-
-        if (method_str == "GET") {
-            method_ = methods::GET;
-        } else if (method_str == "POST") {
-            method_ = methods::POST;
-        } else {
-            method_ = methods::UNSUPPORTED;
-        }
-
-        version_ = version_.substr(version_.find('/') + 1);
-        stream.ignore(2);
-
-        while (!stream.eof()) {
-            std::string line;
-            std::getline(stream, line, '\r');
-            if (line.empty()) {
-                break;
-            }
-            stream.ignore(2);
-
-            size_t delim_pos = line.find(':');
-            std::string name = line.substr(0, delim_pos);
-            std::string value = line.substr(delim_pos + 1);
-            utils::lstrip(value);
-            headers_.emplace(std::move(name), std::move(value));
-        }
+    const QueryLine &HttpRequest::get_first_line() const {
+        return first_line_;
     }
 
-    void HttpRequest::read_get() {
-        if (path_.find('?') != std::string::npos) {
-            std::string query_string = path_.substr(path_.find('?') + 1);
-            utils::parse_query_string(query_string, params_);
-        }
-    }
-
-    void HttpRequest::read_post(size_t start) {
-        auto &buffer = connection_.get_buffer();
-        auto content_type = headers_.at("Content-Type");
-        auto content_len = std::stoll(headers_.at("Content-Length"));
-
-        while (content_len > 0) {
-            size_t bytes = connection_.read();
-            content_len -= bytes;
-            Coroutine::yield();
-        }
-        body_ = buffer.substr(start);
-
-        if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
-            utils::parse_query_string(body_, params_);
-    }
-
-    /*-------------------Getters--------------------------*/
-
-    const HttpRequest::headers_type  &HttpRequest::get_headers() const {
+    const HeadersMap &HttpRequest::get_headers() const {
         return headers_;
     }
 
-    const HttpRequest::headers_type  &HttpRequest::get_params() const {
+    const HttpRequest::ParamsType &HttpRequest::get_params() const {
         return params_;
-    }
-
-    const HttpRequest::methods &HttpRequest::get_method() const {
-        return method_;
-    }
-
-    const std::string &HttpRequest::get_path() const {
-        return path_;
-    }
-
-    const std::string &HttpRequest::get_version() const {
-        return version_;
     }
 
     const std::string &HttpRequest::get_body() const {

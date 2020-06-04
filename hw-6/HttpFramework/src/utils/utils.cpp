@@ -1,5 +1,6 @@
 #include "utils/utils.hpp"
 #include "Errors.hpp"
+#include "constants.hpp"
 #include <string>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -88,7 +89,7 @@ namespace utils {
         return ss.str();
     }
 
-    std::string to_lowercase(const std::string &str) {
+    std::string to_lowercase(std::string_view str) {
         std::string lowercase;
         lowercase.reserve(str.size());
 
@@ -97,6 +98,37 @@ namespace utils {
         }
 
         return lowercase;
+    }
+
+    std::string to_string(constants::RequestMethod method) {
+        if (method == constants::RequestMethod::GET) {
+            return "GET";
+        } else if (method == constants::RequestMethod::POST) {
+            return "POST";
+        } else {
+            return std::string();
+        }
+    }
+
+    std::string to_string(constants::HttpVersion version) {
+        if (version == constants::HttpVersion::V1_0) {
+            return "HTTP/1.0";
+        } else if (version == constants::HttpVersion::V1_1) {
+            return "HTTP/1.1";
+        } else {
+            return std::string();
+        }
+    }
+
+    std::string_view rtrim(std::string_view v) {
+        ssize_t i;
+        for (i = v.size() - 1; i > 0; --i) {
+            if (!::strchr(constants::strings::whitespaces, v[i])) {
+                break;
+            }
+        }
+        v.remove_suffix(v.size() - i - 1);
+        return v;
     }
 }
 }

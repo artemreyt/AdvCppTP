@@ -7,6 +7,7 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "utils/utils.hpp"
+#include "Receiver.hpp"
 #include <cstring>
 #include <string>
 #include <sys/epoll.h>
@@ -211,13 +212,13 @@ namespace HttpFramework::Server {
         Connection &connection = info.con;
 
         while (true) {
-//            Receiver receiver(connection);
-//            receiver.receive_request();
+             Receiver receiver(connection);
+             auto request = receiver.receive();
 
 //            HttpRequest request(receiver);
 
-            HttpRequest request(connection);
-            request.receive_request();
+//            HttpRequest request(connection);
+//            request.receive_request();
             connection.clear_buffer();
 
             HttpResponse response = server_.onRequest(request);
@@ -227,8 +228,8 @@ namespace HttpFramework::Server {
             server_.logger_.debug("Sent packet to "s + connection.get_dst_ip() + ":"
                                     + std::to_string(connection.get_dst_port()));
 
-            if (request.get_headers().count("Connection")
-                && request.get_headers().at("Connection") == "Keep-Alive") {
+            if (request.get_headers().find("connection")
+                && request.get_headers().get("connection") == "Keep-Alive") {
                 changeEvent(id, EPOLLIN);
                 Coroutine::yield();
             } else {

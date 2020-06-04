@@ -2,8 +2,11 @@
 #include "Connection.hpp"
 #include "Coroutine.hpp"
 #include "constants.hpp"
+#include "HeadersMap.hpp"
+#include "FirstLines.h"
 #include <string>
 #include <string_view>
+#include <cstring>
 
 namespace HttpFramework::Server {
 
@@ -32,7 +35,7 @@ namespace HttpFramework::Server {
         std::string_view first_line_view, headers_view;
         split_until_body(first_line_view, headers_view);
 
-        http_structures::HttpRequest::FirstLine first_line(first_line_view);
+        http_structures::QueryLine first_line(first_line_view);
         http_structures::HeadersMap headers(headers_view);
 
         std::string body;
@@ -43,7 +46,8 @@ namespace HttpFramework::Server {
             body = read_body(start_pos, body_len);
         }
 
-        return http_structures::HttpRequest(first_line, headers, body);
+        return http_structures::HttpRequest(std::move(first_line), std::move(headers),
+                    std::move(body));
     }
 
 
@@ -51,11 +55,29 @@ namespace HttpFramework::Server {
         std::string_view view = connection_.get_buffer();
         size_t size = view.find(constants::strings::endline);
 
-        first_line_ = view.substr(0, size);
+        first_line = view.substr(0, size);
         view.remove_prefix(size);
 
         size = view.find(constants::strings::headers_end);
-        headers_ = view.substr(0, size);
+        headers = view.substr(0, size + ::strlen(constants::strings::endline));
 
+    }
+
+    std::string Receiver::read_body(size_t start_pos, size_t body_len) {
+        auto &buffer = connection_.get_buffer();
+        size_t was_read = buffer.size() - start_pos;
+
+        while ( true ) {
+            size_t bytes = connection_.read();
+            was_read += bytes;
+
+            if ( was_read < body_len ) {
+                Coroutine::yield();
+            } else {
+                break;
+            }
+        }
+
+        return buffer.substr(start_pos, body_len);
     }
 }

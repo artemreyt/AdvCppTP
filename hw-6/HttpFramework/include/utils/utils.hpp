@@ -2,6 +2,7 @@
 #define HTTP_UTILS_HPP
 
 #include "Connection.hpp"
+#include "constants.hpp"
 #include <string>
 #include <cstdint>
 #include <Descriptor.hpp>
@@ -24,7 +25,12 @@ namespace HttpFramework {
 
         std::string string_thread_id();
 
-        std::string to_lowercase(const std::string &str);
+        std::string to_lowercase(std::string_view str);
+
+        std::string_view rtrim(std::string_view &view);
+
+        std::string to_string(constants::RequestMethod method);
+        std::string to_string(constants::HttpVersion version);
 
     }
 }

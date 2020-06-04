@@ -10,6 +10,7 @@ namespace HttpFramework::constants {
         const char *question_mark = "?";
         const char *whitespaces = " \t";
         const char *headers_end = "\r\n\r\n";
+        const char *version_sep = "/";
 
         namespace urlencoded {
             const char *pair_separator = "&";
@@ -22,6 +23,14 @@ namespace HttpFramework::constants {
 
         }
     }
+
+    enum class RequestMethod {
+        GET, POST, UNSUPPORTED
+    };
+
+    enum class HttpVersion {
+        V1_0, V1_1, UNSUPPORTED
+    };
 }
 
 
