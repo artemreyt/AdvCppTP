@@ -5,7 +5,6 @@
 
 namespace HttpFramework::http_structures {
 
-
     QueryLine::QueryLine(std::string_view line) {
         std::stringstream sstream((std::string(line)));
         std::string method, version;

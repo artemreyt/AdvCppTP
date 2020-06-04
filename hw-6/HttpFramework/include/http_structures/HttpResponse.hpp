@@ -2,6 +2,7 @@
 #define HTTPRESPONSE_H
 
 #include "Connection.hpp"
+#include "constants.hpp"
 #include <utility>
 #include <string>
 #include <unordered_map>
@@ -16,7 +17,7 @@ namespace HttpFramework {
 
         class HttpResponse {
         public:
-            explicit HttpResponse(const std::string &version, uint16_t status_code = 200);
+            explicit HttpResponse(constants::HttpVersion version, uint16_t status_code = 200);
 
             void setStatus(uint16_t status_code);
 
@@ -29,14 +30,14 @@ namespace HttpFramework {
 
             void send(Connection &connection);
 
-            std::string version_;
+            constants::HttpVersion version_;
             uint16_t status_code_;
             std::unordered_map<std::string, std::string> headers_;
             std::string body_;
         };
 
         class HttpResponse500 : public HttpResponse {
-            explicit HttpResponse500(const std::string version);
+            explicit HttpResponse500(constants::HttpVersion version);
         };
 
     }

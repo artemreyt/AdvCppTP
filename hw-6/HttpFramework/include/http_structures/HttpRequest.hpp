@@ -22,7 +22,7 @@ namespace HttpFramework::http_structures {
                     make_params();
             }
 
-            const QueryLine &get_first_line() const;
+            const QueryLine  &get_first_line() const;
             const HeadersMap &get_headers() const;
             const ParamsType &get_params() const;
             const std::string &get_body() const;

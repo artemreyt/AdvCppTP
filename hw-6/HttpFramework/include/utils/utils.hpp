@@ -27,7 +27,7 @@ namespace HttpFramework {
 
         std::string to_lowercase(std::string_view str);
 
-        std::string_view rtrim(std::string_view &view);
+        std::string_view rtrim(std::string_view view);
 
         std::string to_string(constants::RequestMethod method);
         std::string to_string(constants::HttpVersion version);

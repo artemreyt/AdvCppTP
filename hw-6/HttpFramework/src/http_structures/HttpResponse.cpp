@@ -1,5 +1,6 @@
 #include "HttpResponse.hpp"
 #include "Coroutine.hpp"
+#include "utils.hpp"
 #include <string>
 #include <numeric>
 #include <utility>
@@ -16,7 +17,7 @@ namespace HttpFramework::http_structures {
             {501, "Not Implemented"}
     };
 
-    HttpResponse::HttpResponse(const std::string &version, uint16_t status_code):
+    HttpResponse::HttpResponse(constants::HttpVersion version, uint16_t status_code):
                 version_(version), status_code_(status_code) {}
 
     void HttpResponse::setStatus(uint16_t status_code) {
@@ -32,7 +33,7 @@ namespace HttpFramework::http_structures {
         std::string msg;
         msg.reserve(sum_len);
 
-        msg += "HTTP/" + version_ + " " + std::to_string(status_code_) + " "
+        msg += utils::to_string(version_) + " " + std::to_string(status_code_) + " "
                 + g_status_info.at(status_code_) + ENDLINE;
 
         for (const auto &[header_name, value] : headers_) {
@@ -65,5 +66,6 @@ namespace HttpFramework::http_structures {
         setHeader("Content-Length", std::to_string(body_.size()));
     }
 
-    HttpResponse500::HttpResponse500(std::string version): HttpResponse(std::move(version), 505) {}
+    HttpResponse500::HttpResponse500(constants::HttpVersion version):
+            HttpResponse(std::move(version), 505) {}
 }

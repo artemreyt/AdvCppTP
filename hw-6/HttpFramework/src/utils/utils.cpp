@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
-#include <fcntl.h>
 #include <sstream>
 #include <thread>
 #include <unordered_map>

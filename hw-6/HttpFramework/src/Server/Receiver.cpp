@@ -56,7 +56,7 @@ namespace HttpFramework::Server {
         size_t size = view.find(constants::strings::endline);
 
         first_line = view.substr(0, size);
-        view.remove_prefix(size);
+        view.remove_prefix(size + ::strlen(constants::strings::endline));
 
         size = view.find(constants::strings::headers_end);
         headers = view.substr(0, size + ::strlen(constants::strings::endline));

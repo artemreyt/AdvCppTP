@@ -4,7 +4,6 @@
 #include "Descriptor.hpp"
 #include "Coroutine.hpp"
 #include "Errors.hpp"
-#include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "utils/utils.hpp"
 #include "Receiver.hpp"
