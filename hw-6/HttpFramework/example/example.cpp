@@ -4,6 +4,10 @@
 #include "HttpRequest.hpp"
 #include <string>
 
+
+
+using HttpFramework::http_structures::HttpResponse, HttpFramework::http_structures::HttpRequest;
+
 const std::string ip = "0.0.0.0";
 const uint16_t port = 8000;
 const std::string log_file = "log.txt";
@@ -13,21 +17,21 @@ class MyServer: public HttpFramework::Server {
 public:
     MyServer(): HttpFramework::Server(ip, port, stdout_logger) {}
 
-    HttpFramework::HttpResponse onRequest(const HttpFramework::HttpRequest &request) override {
-        if (request.get_method() == HttpFramework::HttpRequest::methods::GET) {
+    HttpResponse onRequest(const HttpRequest &request) override {
+        if (request.get_method() == HttpRequest::methods::GET) {
             std::string comment;
             for (const auto &[key, value]: request.get_params()) {
                 comment += (key + " -> ").append(value + " | ");
             }
             logger_.debug("[USER]: GET request got with params: " + comment);
 
-            HttpFramework::HttpResponse response(request.get_version(), 200);
+            HttpResponse response(request.get_version(), 200);
             response.setHeader("Content-Type", "text/plain");
             std::string msg = "Hello, world!";
             response.setBody(msg);
             return response;
         }
-        return HttpFramework::HttpResponse("1.1");
+        return HttpResponse("1.1");
     }
 };
 

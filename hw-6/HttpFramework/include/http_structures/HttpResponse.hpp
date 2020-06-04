@@ -8,6 +8,8 @@
 
 namespace HttpFramework {
 
+    class Server;
+
     namespace http_structures {
 
         class HttpResponse {
@@ -21,7 +23,7 @@ namespace HttpFramework {
             void setBody(std::string body);
 
         private:
-            friend class HttpFrameworkServer;
+            friend class HttpFramework::Server;
 
             void send(Connection &connection);
 

@@ -4,6 +4,7 @@
 #include "Coroutine.hpp"
 #include "Errors.hpp"
 #include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 #include "utils.hpp"
 #include <cstring>
 #include <string>
