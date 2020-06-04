@@ -10,6 +10,8 @@ namespace HttpFramework {
 
         class HttpRequest {
         public:
+            class FirstLine;
+
             using headers_type = std::unordered_map<std::string, std::string>;
 
             enum class methods {

@@ -9,7 +9,7 @@ add_library(HttpFramework
             src/Errors.cpp
             src/http_structures/HttpRequest.cpp
             src/http_structures/HttpResponse.cpp
-            src/Server/Receiver.cpp src/Server/EpollManager.cpp)
+            src/Server/Receiver.cpp src/Server/EpollManager.cpp include/constants.hpp)
 
 target_include_directories(HttpFramework PUBLIC include include/http_structures include/Server)
 target_link_libraries(HttpFramework PUBLIC pthread coroutine Descriptor Logger)

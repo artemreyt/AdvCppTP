@@ -3,24 +3,22 @@
 
 #include "Connection.hpp"
 #include "Server.hpp"
+#include "HttpRequest.hpp"
 
 
 namespace HttpFramework::Server {
 
     class Receiver {
 
+    public:
         explicit    Receiver(Connection &connection);
 
-        void        receive();
-
+        http_structures::HttpRequest    receive();
 
     private:
+        void    split_until_body(std::string_view &first_line, std::string_view &headers);
 
         Connection& connection_;
-        std::string first_string_;
-        std::string headers_;
-        std::string url_params_;
-        std::string body;
     };
 
 
