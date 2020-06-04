@@ -8,7 +8,9 @@
 
 namespace HttpFramework {
 
-    class Server;
+    namespace Server {
+        class EpollManager;
+    }
 
     namespace http_structures {
 
@@ -23,7 +25,7 @@ namespace HttpFramework {
             void setBody(std::string body);
 
         private:
-            friend class HttpFramework::Server;
+            friend class HttpFramework::Server::EpollManager;
 
             void send(Connection &connection);
 

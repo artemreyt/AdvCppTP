@@ -6,6 +6,12 @@
 
 namespace HttpFramework {
 
+    namespace Server {
+        class Server;
+        class EpollManager;
+    }
+
+
     class Connection {
     public:
         Connection() = default;
@@ -36,7 +42,8 @@ namespace HttpFramework {
         [[ nodiscard ]] int get_fd() const;
         void clear_buffer();
 
-        friend class Server;
+        friend class Server::Server;
+        friend class Server::EpollManager;
 
     protected:
         Descriptor::Descriptor fd_;

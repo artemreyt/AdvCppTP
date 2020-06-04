@@ -2,6 +2,7 @@
 #include "Errors.hpp"
 #include "Descriptor.hpp"
 #include "Logger.hpp"
+#include "EpollManager.hpp"
 #include <string>
 #include <cstdint>
 #include <cstring>
@@ -11,7 +12,7 @@
 #include <arpa/inet.h>
 #include <thread>
 
-namespace HttpFramework {
+namespace HttpFramework::Server {
 
     static const int    g_default_max_connections = SOMAXCONN;
     static const size_t g_max_threads = 16;
@@ -71,23 +72,16 @@ namespace HttpFramework {
                     2 : std::thread::hardware_concurrency();
         }
 
-        std::thread epoll_threads[number_threads - 1];
-//        std::vector<EpollManager> managers;
-//
-//        managers.reserve(number_threads - 1);
-//        for (int i = 0; i < number_threads - 1; i++) {
-//            managers.emplace_back(EpollManager(*this));
-//            epoll_threads[i] = std::thread(std::ref(managers.back()));
-//        }
-//        managers.back()();
+//        std::vector<std::thread> epoll_threads(number_threads - 1, std::thread());
 
-        for (auto &thread: epoll_threads) {
-            thread = std::thread(EpollManager(*this));
+        std::thread epoll_threads[number_threads - 1];
+        for (size_t i = 0; i < number_threads - 1; i++) {
+            epoll_threads[i] = std::thread(EpollManager(*this));
         }
         EpollManager(*this).run();
 
-        for (auto &thread: epoll_threads) {
-            thread.join();
+        for (size_t i = 0; i < number_threads - 1; i++) {
+            epoll_threads[i].join();
         }
     }
 

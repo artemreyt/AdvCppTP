@@ -1,4 +1,4 @@
-#include "Server/Server.hpp"
+#include "Server.hpp"
 #include "Logger.hpp"
 #include "HttpResponse.hpp"
 #include "HttpRequest.hpp"
@@ -13,9 +13,9 @@ const uint16_t port = 8000;
 const std::string log_file = "log.txt";
 Logger::StdoutLogger stdout_logger(Logger::t_level::WARNING);
 
-class MyServer: public HttpFramework::Server {
+class MyServer: public HttpFramework::Server::Server {
 public:
-    MyServer(): HttpFramework::Server(ip, port, stdout_logger) {}
+    MyServer(): HttpFramework::Server::Server(ip, port, stdout_logger) {}
 
     HttpResponse onRequest(const HttpRequest &request) override {
         if (request.get_method() == HttpRequest::methods::GET) {

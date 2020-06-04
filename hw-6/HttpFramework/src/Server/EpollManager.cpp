@@ -1,4 +1,5 @@
-#include "Server/Server.hpp"
+#include "Server.hpp"
+#include "EpollManager.hpp"
 #include "Connection.hpp"
 #include "Descriptor.hpp"
 #include "Coroutine.hpp"
@@ -18,7 +19,7 @@
 using std::string_literals::operator""s;
 using HttpFramework::http_structures::HttpResponse, HttpFramework::http_structures::HttpRequest;
 
-namespace HttpFramework {
+namespace HttpFramework::Server {
 
     static const size_t MAX_EVENTS = 1000;
     static const size_t MAX_ACCEPTIONS = 1;
@@ -26,7 +27,7 @@ namespace HttpFramework {
     static const int EPOLL_TIMEOUT = 200;
 
 
-    Server::EpollManager::EpollManager(Server &server) :
+    EpollManager::EpollManager(Server &server) :
             server_(server), epollObject_(epoll_create1(0)) {
 
         if (epollObject_ == -1) {
@@ -40,11 +41,11 @@ namespace HttpFramework {
         addEvent(server.masterSocket_, Event);
     }
 
-    void Server::EpollManager::operator()() {
+    void EpollManager::operator()() {
         run();
     }
 
-    void Server::EpollManager::run() {
+    void EpollManager::run() {
         while (true) {
             epoll_event Events[MAX_EVENTS];
 
@@ -75,7 +76,7 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::acceptClients() {
+    void EpollManager::acceptClients() {
         size_t i = 0;
 
         while (i < MAX_ACCEPTIONS) {
@@ -105,7 +106,7 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::addNewConnection(Connection &&connection) {
+    void EpollManager::addNewConnection(Connection &&connection) {
         int id = connection.fd_;
 
         RoutineInfo info {
@@ -117,7 +118,7 @@ namespace HttpFramework {
 
         Coroutine::create(
                 id,
-                &Server::EpollManager::clientRoutine,
+                &EpollManager::clientRoutine,
                 this
         );
 
@@ -128,7 +129,7 @@ namespace HttpFramework {
         addEvent(id, Event);
     }
 
-    void Server::EpollManager::handleClient(const epoll_event &event) {
+    void EpollManager::handleClient(const epoll_event &event) {
         int id = event.data.u32;
         RoutineInfo &info = routines_.at(id);
 
@@ -170,7 +171,7 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::deleteConnection(int id) {
+    void EpollManager::deleteConnection(int id) {
         const auto &con = routines_.at(id).con;
 
         const auto dst_addr = con.dst_addr_;
@@ -182,14 +183,14 @@ namespace HttpFramework {
     }
 
 
-    void Server::EpollManager::addEvent(int fd, epoll_event &Event) {
+    void EpollManager::addEvent(int fd, epoll_event &Event) {
         if (::epoll_ctl(epollObject_, EPOLL_CTL_ADD, fd, &Event) == -1) {
             throw epollAddError(std::string("Epoll add error: ")
                                 + std::strerror(errno));
         }
     }
 
-    void Server::EpollManager::changeEvent(int id, uint32_t new_event) {
+    void EpollManager::changeEvent(int id, uint32_t new_event) {
         RoutineInfo &info = routines_.at(id);
 
         epoll_event Event{};
@@ -203,15 +204,19 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::clientRoutine() {
+    void EpollManager::clientRoutine() {
         int id = Coroutine::current();
         RoutineInfo &info = this->routines_.at(id);
 
         Connection &connection = info.con;
 
         while (true) {
-            HttpRequest request(connection);
+//            Receiver receiver(connection);
+//            receiver.receive_request();
 
+//            HttpRequest request(receiver);
+
+            HttpRequest request(connection);
             request.receive_request();
             connection.clear_buffer();
 
@@ -232,7 +237,7 @@ namespace HttpFramework {
         }
     }
 
-    void Server::EpollManager::checkTimeouts() {
+    void EpollManager::checkTimeouts() {
         auto now = std::chrono::high_resolution_clock::now();
         std::vector<int> ids;
 
