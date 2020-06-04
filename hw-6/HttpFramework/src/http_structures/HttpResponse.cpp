@@ -2,8 +2,9 @@
 #include "Coroutine.hpp"
 #include <string>
 #include <numeric>
+#include <utility>
 
-namespace HttpFramework {
+namespace HttpFramework::http_structures {
 
     const std::string ENDLINE = "\r\n";
 
@@ -63,4 +64,6 @@ namespace HttpFramework {
         body_ = std::move(body);
         setHeader("Content-Length", std::to_string(body_.size()));
     }
+
+    HttpResponse500::HttpResponse500(std::string version): HttpResponse(std::move(version), 505) {}
 }

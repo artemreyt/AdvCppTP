@@ -7,9 +7,9 @@ add_library(HttpFramework
             src/utils.cpp
             src/Connection.cpp
             src/Errors.cpp
-            src/HttpRequest.cpp
-            src/HttpResponse.cpp)
-target_include_directories(HttpFramework PUBLIC include)
+            src/http_structures/HttpRequest.cpp
+            src/http_structures/HttpResponse.cpp)
+target_include_directories(HttpFramework PUBLIC include include/http_structures)
 target_link_libraries(HttpFramework PUBLIC pthread coroutine Descriptor Logger)
 target_compile_features(HttpFramework PUBLIC cxx_std_17)
 target_compile_options(HttpFramework PUBLIC -O0 -ggdb3)

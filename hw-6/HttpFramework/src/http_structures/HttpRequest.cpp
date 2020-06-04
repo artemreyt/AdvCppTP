@@ -5,7 +5,7 @@
 #include <sstream>
 
 
-namespace HttpFramework {
+namespace HttpFramework::http_structures {
     HttpRequest::HttpRequest(Connection &con): connection_(con) {}
 
     void HttpRequest::receive_request() {

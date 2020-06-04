@@ -14,10 +14,10 @@
 #include <chrono>
 #include <fcntl.h>
 
-#include <mutex>
+using std::string_literals::operator""s;
+using HttpFramework::http_structures::HttpResponse, HttpFramework::http_structures::HttpRequest;
 
 namespace HttpFramework {
-    using std::string_literals::operator""s;
 
     static const size_t MAX_EVENTS = 1000;
     static const size_t MAX_ACCEPTIONS = 1;
@@ -150,7 +150,6 @@ namespace HttpFramework {
             server_.logger_.warn(err.what() + " [id="s + std::to_string(id) + "]");
         } catch (const http_error &err) {
             server_.logger_.warn(err.what());
-            // TODO: send response to client with certain status_code
         } catch (const epoll_error &err) {
             server_.logger_.error(err.what() + " [id="s + std::to_string(id) + "]");
             throw;

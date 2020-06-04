@@ -27,7 +27,7 @@ namespace HttpFramework {
         ~Server() noexcept;
 
         void run(size_t number_threads=std::thread::hardware_concurrency());
-        virtual HttpResponse onRequest(const HttpRequest &request) = 0;
+        virtual http_structures::HttpResponse onRequest(const http_structures::HttpRequest &request) = 0;
         bool is_opened() const;
         void open(const std::string &ip, uint16_t port);
         void set_max_connect(int max_connect);
