@@ -1,7 +1,7 @@
 #include "HttpRequest.hpp"
 #include "Coroutine.hpp"
 #include "Errors.hpp"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 #include <sstream>
 
 
@@ -66,7 +66,7 @@ namespace HttpFramework::http_structures {
             size_t delim_pos = line.find(':');
             std::string name = line.substr(0, delim_pos);
             std::string value = line.substr(delim_pos + 1);
-            lstrip(value);
+            utils::lstrip(value);
             headers_.emplace(std::move(name), std::move(value));
         }
     }
@@ -74,7 +74,7 @@ namespace HttpFramework::http_structures {
     void HttpRequest::read_get() {
         if (path_.find('?') != std::string::npos) {
             std::string query_string = path_.substr(path_.find('?') + 1);
-            parse_query_string(query_string, params_);
+            utils::parse_query_string(query_string, params_);
         }
     }
 
@@ -91,7 +91,7 @@ namespace HttpFramework::http_structures {
         body_ = buffer.substr(start);
 
         if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
-            parse_query_string(body_, params_);
+            utils::parse_query_string(body_, params_);
     }
 
     /*-------------------Getters--------------------------*/

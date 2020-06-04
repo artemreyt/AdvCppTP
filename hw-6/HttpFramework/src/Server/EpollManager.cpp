@@ -1,11 +1,11 @@
-#include "Server.hpp"
+#include "Server/Server.hpp"
 #include "Connection.hpp"
 #include "Descriptor.hpp"
 #include "Coroutine.hpp"
 #include "Errors.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 #include <cstring>
 #include <string>
 #include <sys/epoll.h>
@@ -92,7 +92,7 @@ namespace HttpFramework {
                 throw accept_error();
             }
 
-            get_binded_ip_port(connect_fd.data(), con.src_addr_, con.src_port_);
+            utils::get_binded_ip_port(connect_fd.data(), con.src_addr_, con.src_port_);
             con.dst_addr_ = ::inet_ntoa(client_addr.sin_addr);
             con.dst_port_ = ntohs(client_addr.sin_port);
             con.fd_ = std::move(connect_fd);
@@ -207,8 +207,6 @@ namespace HttpFramework {
         int id = Coroutine::current();
         RoutineInfo &info = this->routines_.at(id);
 
-        int id1 = info.con.fd_.data();
-
         Connection &connection = info.con;
 
         while (true) {
@@ -255,9 +253,7 @@ namespace HttpFramework {
 
                 try {
                     Coroutine::kill(id, std::make_exception_ptr(http_error("Timeout reached")));
-                } catch (...) {
-
-                }
+                } catch (...) {}
 
 
                 deleteConnection(id);

@@ -1,4 +1,4 @@
-#include "utils.hpp"
+#include "utils/utils.hpp"
 #include "Errors.hpp"
 #include <string>
 #include <netinet/in.h>
@@ -10,11 +10,14 @@
 #include <thread>
 #include <unordered_map>
 #include <string_view>
+#include <cctype>
 
 
 namespace HttpFramework {
+
+namespace utils {
     void get_binded_ip_port(int fd, std::string &ip, uint16_t &port) {
-        sockaddr_in addr {};
+        sockaddr_in addr{};
         socklen_t len = sizeof(addr);
 
         int retv = getsockname(fd, reinterpret_cast<sockaddr *>(&addr), &len);
@@ -30,19 +33,7 @@ namespace HttpFramework {
         Event->events = events;
     }
 
-    int  set_nonblock(int fd) {
-        int flags;
-    #if defined(O_NONBLOCK)
-        if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
-            flags = 0;
-        return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    #else
-        flags = 1;
-        return ioctl(fd, FIOBIO, &flags);
-    #endif
-    }
-
-    std::string& lstrip(std::string &str) {
+    std::string &lstrip(std::string &str) {
         str.erase(0, str.find_first_not_of(" \n\r\t"));
         return str;
     }
@@ -83,7 +74,7 @@ namespace HttpFramework {
             size_t header_len = line.find('=');
 
             std::string_view header = line.substr(0, header_len);
-            std::string_view value = line.substr(header_len+1);
+            std::string_view value = line.substr(header_len + 1);
 
             params.emplace(decode_url(header), decode_url(value));
             query_string.remove_prefix(line.size());
@@ -96,5 +87,17 @@ namespace HttpFramework {
         ss << myid;
         return ss.str();
     }
+
+    std::string to_lowercase(const std::string &str) {
+        std::string lowercase;
+        lowercase.reserve(str.size());
+
+        for (char c: str) {
+            lowercase += static_cast<char>(::tolower(c));
+        }
+
+        return lowercase;
+    }
+}
 }
 

@@ -1,8 +1,8 @@
 #include "Connection.hpp"
 #include "Descriptor.hpp"
-#include "Server.hpp"
+#include "Server/Server.hpp"
 #include "Errors.hpp"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -48,7 +48,7 @@ namespace HttpFramework {
 
         dst_addr_ = ip;
         dst_port_ = port;
-        get_binded_ip_port(fd_, src_addr_, src_port_);
+        utils::get_binded_ip_port(fd_, src_addr_, src_port_);
     }
 
 
