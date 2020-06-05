@@ -2,6 +2,8 @@
 #define KVREADER_CONSTANTS_HPP
 
 #include "Data.hpp"
+#include <utility>
+#include <cstdlib>
 
 namespace constants {
 

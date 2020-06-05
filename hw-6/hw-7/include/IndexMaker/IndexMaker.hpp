@@ -19,6 +19,8 @@ namespace KVReader {
 
 
     private:
+        void removeIndex();
+
         Logger::BaseLogger  &logger_;
         fs::path            datafile_path_;
         fs::path            indexfile_path_;

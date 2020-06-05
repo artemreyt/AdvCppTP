@@ -3,8 +3,10 @@
 #include "constants.hpp"
 #include "ForwardReader.hpp"
 #include "RandomWriter.hpp"
+#include "utils.hpp"
 #include <string_view>
 #include <utility>
+#include <cstdio>
 
 using std::literals::string_literals::operator""s;
 
@@ -44,11 +46,15 @@ namespace KVReader {
                     next_log += log_period_;
                 }
 
-            } catch (const KVReader::errors::error &ex) {
+            } catch (const std::runtime_error &ex) {
                 logger_.error(ex.what());
                 removeIndex();
                 throw;
             }
         }
+    }
+
+    void IndexMaker::removeIndex() {
+        std::remove(indexfile_path_.c_str());
     }
 }
