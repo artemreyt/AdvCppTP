@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <random>
 #include <numeric>
-//#include <utility>
 
 using std::string_literals::operator""s;
 static const size_t GIGABYTE = 1UL << 30;
@@ -77,6 +76,7 @@ public:
     }
 
 private:
+
     void randomInitData(Data &data) {
         for (auto &elem: data.payload) {
             elem = generator_();
