@@ -2,10 +2,10 @@
 #include "Data.hpp"
 #include "constants.hpp"
 #include "ForwardReader.hpp"
+#include "RandomWriter.hpp"
 #include <string_view>
 #include <utility>
 
-//using std::literals::string_view_literals::operator""sv;
 using std::literals::string_literals::operator""s;
 
 namespace KVReader {
@@ -34,8 +34,8 @@ namespace KVReader {
                 offset = reader.get_offset();
                 reader.get(key);
 
-
-                writer.put(std::make_pair(key, offset), utils::calculate_index_offset(key));
+                auto data = std::make_pair(key, offset);
+                writer.put(data, utils::calculate_index_offset(key));
 
 
                 ++done;
