@@ -10,7 +10,7 @@ using HttpFramework::http_structures::HttpResponse, HttpFramework::http_structur
 const std::string ip = "0.0.0.0";
 const uint16_t port = 8000;
 const std::string log_file = "log.txt";
-Logger::StdoutLogger stdout_logger(Logger::t_level::DEBUG);
+Logger::StdoutLogger stdout_logger(Logger::t_level::WARNING);
 
 class MyServer: public HttpFramework::Server::Server {
 public:

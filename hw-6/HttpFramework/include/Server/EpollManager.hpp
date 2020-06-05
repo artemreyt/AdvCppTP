@@ -32,13 +32,14 @@ namespace HttpFramework::Server {
 
         void handleClient(const epoll_event &event);
 
-        void clientRoutine();
+        void clientRoutine(Connection &&connection);
 
         void checkTimeouts();
 
 
         struct RoutineInfo {
-            Connection con;
+            uint16_t dst_port;
+            std::string dst_addr;
             uint32_t current_event;
             high_resolution_clock::time_point timeout;
         };

@@ -109,17 +109,19 @@ namespace HttpFramework::Server {
     void EpollManager::addNewConnection(Connection &&connection) {
         int id = connection.fd_;
 
-        RoutineInfo info {
-            .con = std::move(connection),
+        RoutineInfo info = {
+            dst_addr : connection.dst_addr_,
+            .dst_port = connection.dst_port_,
             .current_event = EPOLLIN,
             .timeout = std::chrono::high_resolution_clock::now() + server_.read_timeout_
         };
-        routines_.emplace(id, std::move(info));
+        routines_.emplace(id, info);
 
         Coroutine::create(
                 id,
                 &EpollManager::clientRoutine,
-                this
+                this,
+                std::move(connection)
         );
 
         epoll_event Event {};
@@ -170,12 +172,12 @@ namespace HttpFramework::Server {
             server_.logger_.error("deleteConnection Error[id=" + std::to_string(id) + "]");
         }
     }
-
+//
     void EpollManager::deleteConnection(int id) {
-        const auto &con = routines_.at(id).con;
+        const auto &info = routines_.at(id);
 
-        const auto dst_addr = con.dst_addr_;
-        const auto dst_port = con.dst_port_;
+        const auto dst_addr = info.dst_addr;
+        const auto dst_port = info.dst_port;
 
         routines_.erase(id);
         server_.logger_.info("Disconnect with "s + dst_addr + ":" + std::to_string(dst_port)
@@ -204,20 +206,15 @@ namespace HttpFramework::Server {
         }
     }
 
-    void EpollManager::clientRoutine() {
+    void EpollManager::clientRoutine(Connection &&connection) {
         int id = Coroutine::current();
-        RoutineInfo &info = this->routines_.at(id);
 
-        Connection &connection = info.con;
 
         while (true) {
-             Receiver receiver(connection);
-             auto request = receiver.receive();
+            Receiver receiver(connection);
+            auto request = receiver.receive();
 
-//            HttpRequest request(receiver);
 
-//            HttpRequest request(connection);
-//            request.receive_request();
             connection.clear_buffer();
 
             HttpResponse response = server_.onRequest(request);
@@ -244,10 +241,8 @@ namespace HttpFramework::Server {
 
         for (auto &[id, info]: routines_) {
             if (now > info.timeout) {
-                auto &connection = info.con;
-
-                server_.logger_.warn("Timeout reached for "s + connection.dst_addr_ +
-                                     ":" + std::to_string(connection.dst_port_) + "[id=" +
+                server_.logger_.warn("Timeout reached for "s + info.dst_addr +
+                                     ":" + std::to_string(info.dst_port) + "[id=" +
                                      std::to_string(id) + "]");
                 ids.push_back(id);
             }
